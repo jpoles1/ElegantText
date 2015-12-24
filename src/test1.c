@@ -2,12 +2,12 @@
 #include <math.h>
 
 static Window *main_window;
-static TextLayer *hour_layer;
-static TextLayer *tens_layer;
-static TextLayer *ones_layer;
+static TextLayer *hour_layer, *tens_layer, *ones_layer;
+static TextLayer *date_layer;
 static Layer *graph_layer;
 //Battery State Holder
 static int battery_level;
+static bool charging;
 //Time references
 char *onesMap[13] = {"--", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"};
 char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "fourty", "fifty"};
@@ -16,17 +16,18 @@ bool centered = true;
 int houry = 0;
 int tensy = 30;
 int onesy = 60;
-//Draw Div
+//Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   int width = (int)(float)(((float)battery_level / 100.0F) * (float)bounds.size.w);
   graphics_context_set_fill_color(ctx, GColorDarkGray);
   graphics_fill_rect(ctx, bounds, 4, GCornersAll);
-  graphics_context_set_fill_color(ctx, GColorChromeYellow);
+  graphics_context_set_fill_color(ctx, charging ? GColorGreen:GColorChromeYellow);
   graphics_fill_rect(ctx, GRect(0, 0, width, bounds.size.h), 4, GCornersAll);
 }
 static void battery_handler(BatteryChargeState state){
   battery_level = state.charge_percent;
+  charging = state.is_charging;
   layer_mark_dirty(graph_layer);
 }
 //Change the time
@@ -45,7 +46,11 @@ static void update_time() {
   int ones = min%10;
   static char tens_buffer[10];
   static char ones_buffer[10];
-  if(tens == 1){
+  if(tens==0){
+    strcpy(tens_buffer, "o'");
+    strcpy(ones_buffer, "clock");
+  }
+  else if(tens == 1){
     switch(ones){
       case 0:
         strcpy(tens_buffer, "ten");
@@ -160,6 +165,7 @@ static void init(){
     .unload = main_window_unload
   });
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  battery_state_service_subscribe(battery_handler);
   window_stack_push(main_window, true);
   update_time();
   battery_handler(battery_state_service_peek());
