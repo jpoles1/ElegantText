@@ -6,6 +6,7 @@ static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *date_layer;
 static TextLayer *batt_layer;
 static Layer *graph_layer;
+static Layer *cal_layer;
 //Battery State Holder
 static int battery_level;
 static bool charging;
@@ -17,7 +18,7 @@ bool centered = true;
 int houry = 0;
 int tensy = 30;
 int onesy = 60;
-int batterybary = 105;
+int batterybary = 102;
 int batterypcty = 123;
 int datey = 120;
 //Draw Battery
@@ -28,6 +29,11 @@ static void update_battery(Layer *layer, GContext *ctx) {
   graphics_fill_rect(ctx, bounds, 4, GCornersAll);
   graphics_context_set_fill_color(ctx, charging ? GColorGreen:GColorChromeYellow);
   graphics_fill_rect(ctx, GRect(0, 0, width, bounds.size.h), 4, GCornersAll);
+}
+static void calendar_box(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+  graphics_context_set_stroke_color(ctx, GColorWhite);
+  graphics_draw_rect(ctx, bounds);
 }
 static void update_battery_pct(){
   static char batt_buffer[8] = "";
@@ -57,7 +63,7 @@ static void update_time() {
   int ones = min%10;
   static char tens_buffer[10];
   static char ones_buffer[10];
-  if(tens==0){
+  if(tens==0 && ones==0){
     strcpy(tens_buffer, "o'");
     strcpy(ones_buffer, "clock");
   }
@@ -147,14 +153,14 @@ static void main_window_load(Window *window) {
   text_layer_set_text(ones_layer, "ones");
   //Date
   date_layer = text_layer_create(
-    GRect(10, datey, 40, 40)
+    GRect(5, datey, 40, 40)
   );
   text_layer_set_background_color(date_layer, GColorClear);
   text_layer_set_text_color(date_layer, GColorWhite);
   text_layer_set_text(date_layer, "Day\nDoW");
   //Battery %
   batt_layer = text_layer_create(
-    GRect(bounds.size.w-50, batterypcty, 40, 40)
+    GRect(bounds.size.w-45, batterypcty, 40, 40)
   );
   text_layer_set_background_color(batt_layer, GColorClear);
   text_layer_set_text_color(batt_layer, GColorWhite);
@@ -182,8 +188,12 @@ static void main_window_load(Window *window) {
   //Draw Graphics
   graph_layer = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
   layer_set_update_proc(graph_layer, update_battery);
+  cal_layer = layer_create(GRect(5, datey, 40, 43));
+  layer_set_update_proc(cal_layer, calendar_box);
   //Add to Window
+  layer_add_child(window_get_root_layer(window), cal_layer);
   layer_add_child(window_get_root_layer(window), graph_layer);
+  update_time();
 }
 static void main_window_unload(Window *window){
   text_layer_destroy(hour_layer);
