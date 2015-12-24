@@ -32,6 +32,7 @@ static void update_battery(Layer *layer, GContext *ctx) {
 static void update_battery_pct(){
   static char batt_buffer[8] = "";
   snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
+  text_layer_set_text_color(batt_layer, battery_level < 30 ? GColorRed:GColorWhite);
   text_layer_set_text(batt_layer, batt_buffer);
 }
 static void battery_handler(BatteryChargeState state){
