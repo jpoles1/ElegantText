@@ -17,7 +17,8 @@ bool centered = true;
 int houry = 0;
 int tensy = 30;
 int onesy = 60;
-int batteryy = 105;
+int batterybary = 105;
+int batterypcty = 123;
 int datey = 120;
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
@@ -28,10 +29,16 @@ static void update_battery(Layer *layer, GContext *ctx) {
   graphics_context_set_fill_color(ctx, charging ? GColorGreen:GColorChromeYellow);
   graphics_fill_rect(ctx, GRect(0, 0, width, bounds.size.h), 4, GCornersAll);
 }
+static void update_battery_pct(){
+  static char batt_buffer[8] = "";
+  snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
+  text_layer_set_text(batt_layer, batt_buffer);
+}
 static void battery_handler(BatteryChargeState state){
   battery_level = state.charge_percent;
   charging = state.is_charging;
   layer_mark_dirty(graph_layer);
+  update_battery_pct();
 }
 //Change the time
 static void update_time() {
@@ -144,25 +151,35 @@ static void main_window_load(Window *window) {
   text_layer_set_background_color(date_layer, GColorClear);
   text_layer_set_text_color(date_layer, GColorWhite);
   text_layer_set_text(date_layer, "Day\nDoW");
+  //Battery %
+  batt_layer = text_layer_create(
+    GRect(bounds.size.w-50, batterypcty, 40, 40)
+  );
+  text_layer_set_background_color(batt_layer, GColorClear);
+  text_layer_set_text_color(batt_layer, GColorWhite);
+  text_layer_set_text(batt_layer, "XX %");
   //Setup Fonts
   text_layer_set_font(hour_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_font(tens_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_font(ones_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  text_layer_set_font(batt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   //Optional text centering
   if(centered){
     text_layer_set_text_alignment(hour_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(tens_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(ones_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
+    text_layer_set_text_alignment(batt_layer, GTextAlignmentCenter);
   }
   //Add text layers to Window
   layer_add_child(window_layer, text_layer_get_layer(hour_layer));
   layer_add_child(window_layer, text_layer_get_layer(tens_layer));
   layer_add_child(window_layer, text_layer_get_layer(ones_layer));
   layer_add_child(window_layer, text_layer_get_layer(date_layer));
+  layer_add_child(window_layer, text_layer_get_layer(batt_layer));
   //Draw Graphics
-  graph_layer = layer_create(GRect(5, batteryy, bounds.size.w-10, 8));
+  graph_layer = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
   layer_set_update_proc(graph_layer, update_battery);
   //Add to Window
   layer_add_child(window_get_root_layer(window), graph_layer);
@@ -172,6 +189,7 @@ static void main_window_unload(Window *window){
   text_layer_destroy(tens_layer);
   text_layer_destroy(ones_layer);
   text_layer_destroy(date_layer);
+  text_layer_destroy(batt_layer);
   layer_destroy(graph_layer);
 }
 //Init & Deinit
