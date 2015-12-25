@@ -4,6 +4,7 @@
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *date_layer, *weekday_layer;
+static TextLayer *weather_layer;
 static TextLayer *batt_layer;
 static Layer *graph_layer;
 static Layer *cal_layer;
@@ -21,6 +22,7 @@ int tensy = 30;
 int onesy = 60;
 int batterybary = 102;
 int batterypcty = 123;
+int datex = 52;
 int datey = 122;
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
@@ -159,14 +161,14 @@ static void main_window_load(Window *window) {
   text_layer_set_text(ones_layer, "ones");
   //Date
   weekday_layer = text_layer_create(
-    GRect(5, datey-4, 40, 21)
+    GRect(datex, datey-4, 40, 21)
   );
   text_layer_set_background_color(weekday_layer, GColorWhite);
   text_layer_set_text_color(weekday_layer, GColorBlack);
   text_layer_set_text(weekday_layer, "DoW");
   //Weekday
   date_layer = text_layer_create(
-    GRect(5, datey+16, 40, 40)
+    GRect(datex, datey+16, 40, 40)
   );
   text_layer_set_background_color(date_layer, GColorClear);
   text_layer_set_text_color(date_layer, GColorWhite);
@@ -204,11 +206,23 @@ static void main_window_load(Window *window) {
   //Draw Graphics
   graph_layer = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
   layer_set_update_proc(graph_layer, update_battery);
-  cal_layer = layer_create(GRect(5, datey, 40, 40));
+  cal_layer = layer_create(GRect(datex, datey, 40, 40));
   layer_set_update_proc(cal_layer, calendar_box);
   //Add to Window
   layer_add_child(window_get_root_layer(window), cal_layer);
   layer_add_child(window_get_root_layer(window), graph_layer);
+  //Optional weather
+  if(weather){
+    weather_layer = text_layer_create(
+      GRect(7, batterypcty, 40, 40)
+    );
+    text_layer_set_background_color(weather_layer, GColorClear);
+    text_layer_set_text_color(weather_layer, GColorWhite);
+    text_layer_set_text(weather_layer, "--°");
+    text_layer_set_font(weather_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+    text_layer_set_text_alignment(weather_layer, GTextAlignmentCenter);
+    layer_add_child(window_layer, text_layer_get_layer(weather_layer));
+  }
   update_time();
 }
 static void main_window_unload(Window *window){
@@ -218,6 +232,9 @@ static void main_window_unload(Window *window){
   text_layer_destroy(date_layer);
   text_layer_destroy(weekday_layer);
   text_layer_destroy(batt_layer);
+  if(weather){
+    text_layer_destroy(weather_layer);
+  }
   layer_destroy(graph_layer);
 }
 //Init & Deinit
