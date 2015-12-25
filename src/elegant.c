@@ -4,8 +4,7 @@
 
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
-static TextLayer *date_layer, *weekday_layer;
-static TextLayer *weather_layer;
+static TextLayer *weekday_layer, *date_layer, *month_layer;
 static TextLayer *batt_layer;
 static Layer *graph_layer;
 static Layer *cal_layer;
@@ -17,34 +16,14 @@ char *onesMap[13] = {"", "one", "two", "three", "four", "five", "six", "seven", 
 char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "fourty", "fifty"};
 //Config
 bool centered = true;
-bool weather = true;
 int houry = 0;
 int tensy = 30;
 int onesy = 60;
 int batterybary = 102;
+int batterypctx = 96;
 int batterypcty = 123;
-int datex = 52;
+int datex = 50;
 int datey = 122;
-//Update Weather
-static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
-  Tuple *temp_tuple = dict_find(iterator, KEY_TEMPERATURE);
-  static char temperature_buffer[8];
-  if(temp_tuple){
-    snprintf(temperature_buffer, sizeof(temperature_buffer), "%d°F", (int)temp_tuple->value->int32);
-    text_layer_set_text(weather_layer, temperature_buffer);
-  }
-}
-static void inbox_dropped_callback(AppMessageResult reason, void *context) {
-  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
-}
-
-static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
-  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
-}
-
-static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
-}
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -62,7 +41,7 @@ static void calendar_box(Layer *layer, GContext *ctx) {
   graphics_draw_rect(ctx, GRect(0, divbary, bounds.size.w, bounds.size.h-divbary));
 }
 static void update_battery_pct(){
-  static char batt_buffer[8] = "";
+  static char batt_buffer[4] = "";
   snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
   text_layer_set_text_color(batt_layer, battery_level < 30 ? GColorRed:GColorWhite);
   text_layer_set_text(batt_layer, batt_buffer);
@@ -78,18 +57,6 @@ static void update_time() {
   // Get a tm structure
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
-  //Refresh weather at :45
-  if(tick_time->tm_min % 45 == 0) {
-    // Begin dictionary
-    DictionaryIterator *iter;
-    app_message_outbox_begin(&iter);
-
-    // Add a key-value pair
-    dict_write_uint8(iter, 0, 0);
-
-    // Send the message!
-    app_message_outbox_send();
-  }
   //Display hour
   int hour = tick_time->tm_hour;
   static char hour_buffer[8];
@@ -156,12 +123,15 @@ static void update_time() {
   text_layer_set_text(tens_layer, tens_buffer);
   text_layer_set_text(ones_layer, ones_buffer);
   //Date
-  static char date_buffer[5];
   static char weekday_buffer[5];
-  strftime(date_buffer, sizeof(date_buffer), "%d", tick_time);
+  static char month_buffer[5];
+  static char date_buffer[5];
   strftime(weekday_buffer, sizeof(weekday_buffer), "%a", tick_time);
-  text_layer_set_text(date_layer, date_buffer);
+  strftime(month_buffer, sizeof(month_buffer), "%b", tick_time);
+  strftime(date_buffer, sizeof(date_buffer), "%d", tick_time);
   text_layer_set_text(weekday_layer, weekday_buffer);
+  text_layer_set_text(month_layer, month_buffer);
+  text_layer_set_text(date_layer, date_buffer);
 }
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
   update_time();
@@ -192,14 +162,21 @@ static void main_window_load(Window *window) {
   text_layer_set_background_color(ones_layer, GColorClear);
   text_layer_set_text_color(ones_layer, GColorWhite);
   text_layer_set_text(ones_layer, "ones");
-  //Date
+  //Day of Week
   weekday_layer = text_layer_create(
+    GRect(15, batterypcty, 40, 40)
+  );
+  text_layer_set_background_color(weekday_layer, GColorClear);
+  text_layer_set_text_color(weekday_layer, GColorWhite);
+  text_layer_set_text(weekday_layer, "XX %");
+  //Month
+  month_layer = text_layer_create(
     GRect(datex, datey-4, 40, 21)
   );
-  text_layer_set_background_color(weekday_layer, GColorWhite);
-  text_layer_set_text_color(weekday_layer, GColorBlack);
-  text_layer_set_text(weekday_layer, "DoW");
-  //Weekday
+  text_layer_set_background_color(month_layer, GColorWhite);
+  text_layer_set_text_color(month_layer, GColorBlack);
+  text_layer_set_text(month_layer, "Mnth");
+  //Date
   date_layer = text_layer_create(
     GRect(datex, datey+16, 40, 40)
   );
@@ -208,7 +185,7 @@ static void main_window_load(Window *window) {
   text_layer_set_text(date_layer, "Day");
   //Battery %
   batt_layer = text_layer_create(
-    GRect(bounds.size.w-45, batterypcty, 40, 40)
+    GRect(batterypctx, batterypcty, 40, 40)
   );
   text_layer_set_background_color(batt_layer, GColorClear);
   text_layer_set_text_color(batt_layer, GColorWhite);
@@ -218,7 +195,8 @@ static void main_window_load(Window *window) {
   text_layer_set_font(tens_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_font(ones_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
-  text_layer_set_font(weekday_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  text_layer_set_font(month_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  text_layer_set_font(weekday_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   text_layer_set_font(batt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   //Optional text centering
   if(centered){
@@ -226,15 +204,16 @@ static void main_window_load(Window *window) {
     text_layer_set_text_alignment(tens_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(ones_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
-    text_layer_set_text_alignment(weekday_layer, GTextAlignmentCenter);
+    text_layer_set_text_alignment(month_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(batt_layer, GTextAlignmentCenter);
   }
   //Add text layers to Window
   layer_add_child(window_layer, text_layer_get_layer(hour_layer));
   layer_add_child(window_layer, text_layer_get_layer(tens_layer));
   layer_add_child(window_layer, text_layer_get_layer(ones_layer));
-  layer_add_child(window_layer, text_layer_get_layer(date_layer));
   layer_add_child(window_layer, text_layer_get_layer(weekday_layer));
+  layer_add_child(window_layer, text_layer_get_layer(date_layer));
+  layer_add_child(window_layer, text_layer_get_layer(month_layer));
   layer_add_child(window_layer, text_layer_get_layer(batt_layer));
   //Draw Graphics
   graph_layer = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
@@ -244,30 +223,16 @@ static void main_window_load(Window *window) {
   //Add to Window
   layer_add_child(window_get_root_layer(window), cal_layer);
   layer_add_child(window_get_root_layer(window), graph_layer);
-  //Optional weather
-  if(weather){
-    weather_layer = text_layer_create(
-      GRect(5, batterypcty, 40, 40)
-    );
-    text_layer_set_background_color(weather_layer, GColorClear);
-    text_layer_set_text_color(weather_layer, GColorWhite);
-    text_layer_set_text(weather_layer, "--°F");
-    text_layer_set_font(weather_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-    text_layer_set_text_alignment(weather_layer, GTextAlignmentCenter);
-    layer_add_child(window_layer, text_layer_get_layer(weather_layer));
-  }
   update_time();
 }
 static void main_window_unload(Window *window){
   text_layer_destroy(hour_layer);
   text_layer_destroy(tens_layer);
   text_layer_destroy(ones_layer);
-  text_layer_destroy(date_layer);
   text_layer_destroy(weekday_layer);
+  text_layer_destroy(date_layer);
+  text_layer_destroy(month_layer);
   text_layer_destroy(batt_layer);
-  if(weather){
-    text_layer_destroy(weather_layer);
-  }
   layer_destroy(graph_layer);
 }
 //Init & Deinit
@@ -280,14 +245,6 @@ static void init(){
   });
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   battery_state_service_subscribe(battery_handler);
-  if(weather){
-    // Register callbacks
-    app_message_register_inbox_received(inbox_received_callback);
-    app_message_register_inbox_dropped(inbox_dropped_callback);
-    app_message_register_outbox_failed(outbox_failed_callback);
-    app_message_register_outbox_sent(outbox_sent_callback);
-    app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
-  }
   //Push window
   window_stack_push(main_window, true);
   //Run initial updates
