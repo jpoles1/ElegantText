@@ -3,7 +3,7 @@
 
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
-static TextLayer *date_layer;
+static TextLayer *date_layer, *weekday_layer;
 static TextLayer *batt_layer;
 static Layer *graph_layer;
 static Layer *cal_layer;
@@ -15,12 +15,13 @@ char *onesMap[13] = {"--", "one", "two", "three", "four", "five", "six", "seven"
 char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "fourty", "fifty"};
 //Config
 bool centered = true;
+bool weather = false;
 int houry = 0;
 int tensy = 30;
 int onesy = 60;
 int batterybary = 102;
 int batterypcty = 123;
-int datey = 120;
+int datey = 122;
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -34,6 +35,8 @@ static void calendar_box(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   graphics_context_set_stroke_color(ctx, GColorWhite);
   graphics_draw_rect(ctx, bounds);
+  int divbary = 16;
+  graphics_draw_rect(ctx, GRect(0, divbary, bounds.size.w, bounds.size.h-divbary));
 }
 static void update_battery_pct(){
   static char batt_buffer[8] = "";
@@ -55,7 +58,7 @@ static void update_time() {
   //Display hour
   int hour = tick_time->tm_hour;
   static char hour_buffer[8];
-  strcpy(hour_buffer, onesMap[hour==12 ? 12:hour%12]);
+  strcpy(hour_buffer, onesMap[hour%12==0 ? 12:hour%12]);
   text_layer_set_text(hour_layer, hour_buffer);
   //Display Minutes
   int min = tick_time->tm_min;
@@ -118,9 +121,12 @@ static void update_time() {
   text_layer_set_text(tens_layer, tens_buffer);
   text_layer_set_text(ones_layer, ones_buffer);
   //Date
-  static char date_buffer[10];
-  strftime(date_buffer, sizeof(date_buffer), "%a\n%d", tick_time);
+  static char date_buffer[5];
+  static char weekday_buffer[5];
+  strftime(date_buffer, sizeof(date_buffer), "%d", tick_time);
+  strftime(weekday_buffer, sizeof(weekday_buffer), "%a", tick_time);
   text_layer_set_text(date_layer, date_buffer);
+  text_layer_set_text(weekday_layer, weekday_buffer);
 }
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
   update_time();
@@ -152,12 +158,19 @@ static void main_window_load(Window *window) {
   text_layer_set_text_color(ones_layer, GColorWhite);
   text_layer_set_text(ones_layer, "ones");
   //Date
+  weekday_layer = text_layer_create(
+    GRect(5, datey-4, 40, 21)
+  );
+  text_layer_set_background_color(weekday_layer, GColorWhite);
+  text_layer_set_text_color(weekday_layer, GColorBlack);
+  text_layer_set_text(weekday_layer, "DoW");
+  //Weekday
   date_layer = text_layer_create(
-    GRect(5, datey, 40, 40)
+    GRect(5, datey+16, 40, 40)
   );
   text_layer_set_background_color(date_layer, GColorClear);
   text_layer_set_text_color(date_layer, GColorWhite);
-  text_layer_set_text(date_layer, "Day\nDoW");
+  text_layer_set_text(date_layer, "Day");
   //Battery %
   batt_layer = text_layer_create(
     GRect(bounds.size.w-45, batterypcty, 40, 40)
@@ -170,6 +183,7 @@ static void main_window_load(Window *window) {
   text_layer_set_font(tens_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_font(ones_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  text_layer_set_font(weekday_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_font(batt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   //Optional text centering
   if(centered){
@@ -177,6 +191,7 @@ static void main_window_load(Window *window) {
     text_layer_set_text_alignment(tens_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(ones_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
+    text_layer_set_text_alignment(weekday_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(batt_layer, GTextAlignmentCenter);
   }
   //Add text layers to Window
@@ -184,11 +199,12 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, text_layer_get_layer(tens_layer));
   layer_add_child(window_layer, text_layer_get_layer(ones_layer));
   layer_add_child(window_layer, text_layer_get_layer(date_layer));
+  layer_add_child(window_layer, text_layer_get_layer(weekday_layer));
   layer_add_child(window_layer, text_layer_get_layer(batt_layer));
   //Draw Graphics
   graph_layer = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
   layer_set_update_proc(graph_layer, update_battery);
-  cal_layer = layer_create(GRect(5, datey, 40, 43));
+  cal_layer = layer_create(GRect(5, datey, 40, 40));
   layer_set_update_proc(cal_layer, calendar_box);
   //Add to Window
   layer_add_child(window_get_root_layer(window), cal_layer);
@@ -200,6 +216,7 @@ static void main_window_unload(Window *window){
   text_layer_destroy(tens_layer);
   text_layer_destroy(ones_layer);
   text_layer_destroy(date_layer);
+  text_layer_destroy(weekday_layer);
   text_layer_destroy(batt_layer);
   layer_destroy(graph_layer);
 }
