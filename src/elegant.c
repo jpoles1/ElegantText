@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include <math.h>
+#define KEY_TEMPERATURE 0
 
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
@@ -24,6 +25,26 @@ int batterybary = 102;
 int batterypcty = 123;
 int datex = 52;
 int datey = 122;
+//Update Weather
+static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
+  Tuple *temp_tuple = dict_find(iterator, KEY_TEMPERATURE);
+  static char temperature_buffer[8];
+  if(temp_tuple){
+    snprintf(temperature_buffer, sizeof(temperature_buffer), "%d°F", (int)temp_tuple->value->int32);
+    text_layer_set_text(weather_layer, temperature_buffer);
+  }
+}
+static void inbox_dropped_callback(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
+}
+
+static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
+}
+
+static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
+}
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -57,6 +78,18 @@ static void update_time() {
   // Get a tm structure
   time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
+  //Refresh weather at :45
+  if(tick_time->tm_min % 45 == 0) {
+    // Begin dictionary
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+
+    // Add a key-value pair
+    dict_write_uint8(iter, 0, 0);
+
+    // Send the message!
+    app_message_outbox_send();
+  }
   //Display hour
   int hour = tick_time->tm_hour;
   static char hour_buffer[8];
@@ -214,11 +247,11 @@ static void main_window_load(Window *window) {
   //Optional weather
   if(weather){
     weather_layer = text_layer_create(
-      GRect(7, batterypcty, 40, 40)
+      GRect(5, batterypcty, 40, 40)
     );
     text_layer_set_background_color(weather_layer, GColorClear);
     text_layer_set_text_color(weather_layer, GColorWhite);
-    text_layer_set_text(weather_layer, "--°");
+    text_layer_set_text(weather_layer, "--°F");
     text_layer_set_font(weather_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
     text_layer_set_text_alignment(weather_layer, GTextAlignmentCenter);
     layer_add_child(window_layer, text_layer_get_layer(weather_layer));
@@ -247,7 +280,17 @@ static void init(){
   });
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
   battery_state_service_subscribe(battery_handler);
+  if(weather){
+    // Register callbacks
+    app_message_register_inbox_received(inbox_received_callback);
+    app_message_register_inbox_dropped(inbox_dropped_callback);
+    app_message_register_outbox_failed(outbox_failed_callback);
+    app_message_register_outbox_sent(outbox_sent_callback);
+    app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  }
+  //Push window
   window_stack_push(main_window, true);
+  //Run initial updates
   update_time();
   battery_handler(battery_state_service_peek());
 }
