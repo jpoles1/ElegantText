@@ -11,11 +11,11 @@ static Layer *cal_layer;
 static int battery_level;
 static bool charging;
 //Time references
-char *onesMap[13] = {"--", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"};
+char *onesMap[13] = {"", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"};
 char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "fourty", "fifty"};
 //Config
 bool centered = true;
-bool weather = false;
+bool weather = true;
 int houry = 0;
 int tensy = 30;
 int onesy = 60;
@@ -74,43 +74,43 @@ static void update_time() {
     switch(ones){
       case 0:
         strcpy(tens_buffer, "ten");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
       case 1:
         strcpy(tens_buffer, "eleven");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
       case 2:
         strcpy(tens_buffer, "twelve");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
       case 3:
         strcpy(tens_buffer, "thirteen");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
       case 4:
         strcpy(tens_buffer, "fourteen");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
       case 5:
         strcpy(tens_buffer, "fifteen");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
       case 6:
         strcpy(tens_buffer, "sixteen");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
       case 7:
         strcpy(tens_buffer, "svnteen");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
       case 8:
         strcpy(tens_buffer, "eighteen");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
       case 9:
         strcpy(tens_buffer, "nineteen");
-        strcpy(ones_buffer, "");
+        strcpy(ones_buffer, onesMap[0]);
         break;
     }
   }
