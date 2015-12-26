@@ -9,9 +9,8 @@
   "watchapp": {
     "watchface": true
   },
-  "capabilities": [ "location" ],
   "appKeys": {
-    "KEY_TEMPERATURE": 0
+    "dummy": 0
   },
   "resources": {
     "media": []
