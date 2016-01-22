@@ -26,12 +26,13 @@ int batterypcty = 123;
 int datex = 50;
 int datey = 122;
 //Draw Battery
-static void animate_bar(Layer *layer, int width){
-  GRect bounds = layer_get_bounds(layer);
+static void animate_bar(Layer *layer){
+  GRect bounds = layer_get_bounds(batt_bg);
+  int width = (int)(float)(((float)battery_level / 100.0F) * (float)bounds.size.w);
   GRect start = GRect(5, batterybary, 0, bounds.size.h);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Loop index now %d", bounds.origin.x);
   GRect finish = GRect(5, batterybary, width, bounds.size.h);
   PropertyAnimation *prop_anim_grow_bar = property_animation_create_layer_frame(layer, &start, &finish);
+  animation_set_duration((Animation*)prop_anim_grow_bar, 1500);
   animation_schedule((Animation*) prop_anim_grow_bar);
 }
 static void battery_background(Layer *layer, GContext *ctx){
@@ -58,14 +59,12 @@ static void update_battery_pct(){
   snprintf(batt_buffer, sizeof(batt_buffer), charging ? "+++" : battery_level == 100 ? "100":"%i%%", battery_level);
   text_layer_set_text_color(batt_layer, battery_level < 30 ? GColorRed:GColorWhite);
   text_layer_set_text(batt_layer, batt_buffer);
+  animate_bar(batt_bar);
 }
 static void battery_handler(BatteryChargeState state){
   battery_level = state.charge_percent;
   charging = state.is_charging;
-  GRect bounds = layer_get_bounds(batt_bg);
-  int width = (int)(float)(((float)battery_level / 100.0F) * (float)bounds.size.w);
   update_battery_pct();
-  animate_bar(batt_bar, width);
 }
 //Change the time
 static void update_time() {
