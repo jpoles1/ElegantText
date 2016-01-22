@@ -6,11 +6,12 @@ static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
 static TextLayer *batt_layer;
-static Layer *graph_layer;
+static Layer *batt_bg, *batt_bar;
 static Layer *cal_layer;
+static PropertyAnimation *prop_anim_grow_bar;
 //Battery State Holder
-static int battery_level;
-static bool charging;
+int battery_level;
+bool charging;
 //Time references
 char *onesMap[13] = {"", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"};
 char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "fourty", "fifty"};
@@ -25,13 +26,25 @@ int batterypcty = 123;
 int datex = 50;
 int datey = 122;
 //Draw Battery
-static void update_battery(Layer *layer, GContext *ctx) {
+static void animate_bar(Layer *layer, int width){
   GRect bounds = layer_get_bounds(layer);
-  int width = (int)(float)(((float)battery_level / 100.0F) * (float)bounds.size.w);
+  GRect start = GRect(5, batterybary, 0, bounds.size.h);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Loop index now %d", bounds.origin.x);
+  GRect finish = GRect(5, batterybary, width, bounds.size.h);
+  PropertyAnimation *prop_anim_grow_bar = property_animation_create_layer_frame(layer, &start, &finish);
+  animation_schedule((Animation*) prop_anim_grow_bar);
+}
+static void battery_background(Layer *layer, GContext *ctx){
+  GRect bounds = layer_get_bounds(layer);
+  //draw background
   graphics_context_set_fill_color(ctx, GColorDarkGray);
   graphics_fill_rect(ctx, bounds, 4, GCornersAll);
+}
+static void update_battery(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+  //fill bar
   graphics_context_set_fill_color(ctx, charging ? GColorGreen:GColorChromeYellow);
-  graphics_fill_rect(ctx, GRect(0, 0, width, bounds.size.h), 4, GCornersAll);
+  graphics_fill_rect(ctx, GRect(0, 0, bounds.size.w, bounds.size.h), 4, GCornersAll);
 }
 static void calendar_box(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -42,15 +55,17 @@ static void calendar_box(Layer *layer, GContext *ctx) {
 }
 static void update_battery_pct(){
   static char batt_buffer[4] = "";
-  snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
+  snprintf(batt_buffer, sizeof(batt_buffer), charging ? "+++" : battery_level == 100 ? "100":"%i%%", battery_level);
   text_layer_set_text_color(batt_layer, battery_level < 30 ? GColorRed:GColorWhite);
   text_layer_set_text(batt_layer, batt_buffer);
 }
 static void battery_handler(BatteryChargeState state){
   battery_level = state.charge_percent;
   charging = state.is_charging;
-  layer_mark_dirty(graph_layer);
+  GRect bounds = layer_get_bounds(batt_bg);
+  int width = (int)(float)(((float)battery_level / 100.0F) * (float)bounds.size.w);
   update_battery_pct();
+  animate_bar(batt_bar, width);
 }
 //Change the time
 static void update_time() {
@@ -216,13 +231,16 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, text_layer_get_layer(month_layer));
   layer_add_child(window_layer, text_layer_get_layer(batt_layer));
   //Draw Graphics
-  graph_layer = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
-  layer_set_update_proc(graph_layer, update_battery);
+  batt_bg = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
+  batt_bar = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
+  layer_set_update_proc(batt_bg, battery_background);
+  layer_set_update_proc(batt_bar, update_battery);
   cal_layer = layer_create(GRect(datex, datey, 40, 40));
   layer_set_update_proc(cal_layer, calendar_box);
   //Add to Window
   layer_add_child(window_get_root_layer(window), cal_layer);
-  layer_add_child(window_get_root_layer(window), graph_layer);
+  layer_add_child(window_get_root_layer(window), batt_bg);
+  layer_add_child(window_get_root_layer(window), batt_bar);
   update_time();
 }
 static void main_window_unload(Window *window){
@@ -233,7 +251,8 @@ static void main_window_unload(Window *window){
   text_layer_destroy(date_layer);
   text_layer_destroy(month_layer);
   text_layer_destroy(batt_layer);
-  layer_destroy(graph_layer);
+  layer_destroy(batt_bg);
+  layer_destroy(batt_bar);
 }
 //Init & Deinit
 static void init(){
