@@ -13,7 +13,7 @@ static int battery_level;
 static bool charging;
 //Time references
 char *onesMap[13] = {"", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"};
-char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "fourty", "fifty"};
+char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "forty", "fifty"};
 //Config
 bool centered = true;
 int houry = 0;
