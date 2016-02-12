@@ -38,6 +38,20 @@
           <div class='button-container' id="theme-box">
             <input type='button' class='item-button' value='Default' onclick="set_theme('default')">
             <input type='button' class='item-button' value='Infected' onclick="set_theme('infected')">
+            <input type='button' class='item-button' value='Burnt' onclick="set_theme('burnt')">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class='item-container'>
+      <div class='item-container-header'>Get Current Color Values (HEX):</div>
+      <div class='item-container-content'>
+        <div class='item-container'>
+          <div class='button-container' id="theme-box">
+            <br>
+            <input type='button' class='item-button' value='Get Current Values' onclick="print_conf()">
+            <div id="curr_set"></div>
+            <br>
           </div>
         </div>
       </div>
@@ -67,9 +81,6 @@
           Accent Color
           <input id='accent_color_picker' type='text' class='item-color item-color-normal' value='#FFAA00'>
         </label>
-      </div>
-      <div class='item-container-footer'>
-        Choose the app's color scheme.
       </div>
     </div>
 
@@ -121,7 +132,7 @@
     document.location = return_to + encodeURIComponent(JSON.stringify(getConfigData()));
   });
   function set_theme(name){
-    var theme = {"default": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#FFAA00'}, "infected": {"bg": '#550055', "txt": '#AAAAAA', "ac": '#55FF00'}}
+    var theme = {"default": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#FFAA00'}, "infected": {"bg": '#550055', "txt": '#FFFFFF', "ac": '#55FF00'}, "burnt": {"bg": '#FFAA00', "txt": '#000000', "ac": '#000000'}}
     console.log(name, theme[name])
     var backgroundColorPicker = document.getElementById('background_color_picker');
     var textColorPicker = document.getElementById('text_color_picker');
@@ -133,6 +144,10 @@
     $("#text_color_picker + .item-styled-color .value").css("background-color", theme[name]["txt"])
     $("#accent_color_picker + .item-styled-color .value").css("background-color", theme[name]["ac"])
     console.log("Set new theme:", theme[name]["bg"], theme[name]["txt"], theme[name]["ac"])
+  }
+  function print_conf(){
+    x = getConfigData()
+    $('#curr_set').html("Background: "+x["background_color"]+"; Text: "+x["text_color"]+"; Accent: "+x["accent_color"])
   }
   (function() {
     var backgroundColorPicker = document.getElementById('background_color_picker');
