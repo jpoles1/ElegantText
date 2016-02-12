@@ -1,24 +1,24 @@
 #include <pebble.h>
 #include <math.h>
 #define color_set 0
-#define bg_R 0
-#define bg_G 0
-#define bg_B 0
-#define txt_R 255
-#define txt_G 255
-#define txt_B 255
-#define ac_R 255
-#define ac_G 170
-#define ac_B 0
+#define bg_R 1
+#define bg_G 2
+#define bg_B 3
+#define txt_R 4
+#define txt_G 5
+#define txt_B 6
+#define ac_R 7
+#define ac_G 8
+#define ac_B 9
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
 static TextLayer *batt_layer;
 static Layer *graph_layer;
 static Layer *cal_layer;
-GColor bg_color;
-GColor txt_color;
-GColor ac_color;
+static GColor bg_color;
+static GColor txt_color;
+static GColor ac_color;
 //Battery State Holder
 static int battery_level;
 static bool charging;
@@ -35,125 +35,30 @@ int batterypctx = 96;
 int batterypcty = 123;
 int datex = 50;
 int datey = 122;
-static GColor getBgCol(){
-  int red = persist_read_int(bg_R);
-  int green = persist_read_int(bg_G);
-  int blue = persist_read_int(bg_B);
-  bg_color = GColorFromRGB(red, green, blue);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Background Color - R: %d, G: %d, B: %d", red, green, blue);
-  return(bg_color);
-}
-static GColor getTxtCol(){
-  int red = persist_read_int(txt_R);
-  int green = persist_read_int(txt_G);
-  int blue = persist_read_int(txt_B);
-  txt_color = GColorFromRGB(red, green, blue);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Text Color - R: %d, G: %d, B: %d", red, green, blue);
-  return(txt_color);
-}
-static GColor getAcCol(){
-  int red = persist_read_int(ac_R);
-  int green = persist_read_int(ac_G);
-  int blue = persist_read_int(ac_B);
-  ac_color = GColorFromRGB(red, green, blue);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Accent Color - R: %d, G: %d, B: %d", red, green, blue);
-  return(ac_color);
-}
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   int width = (int)(float)(((float)battery_level / 100.0F) * (float)bounds.size.w);
   graphics_context_set_fill_color(ctx, GColorDarkGray);
   graphics_fill_rect(ctx, bounds, 4, GCornersAll);
-  graphics_context_set_fill_color(ctx, charging ? GColorGreen:getAcCol());
+  graphics_context_set_fill_color(ctx, charging ? GColorGreen:ac_color);
   graphics_fill_rect(ctx, GRect(0, 0, width, bounds.size.h), 4, GCornersAll);
 }
 static void update_battery_pct(){
   static char batt_buffer[4] = "";
   snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
-  text_layer_set_text_color(batt_layer, battery_level < 30 ? getAcCol():getTxtCol());
+  text_layer_set_text_color(batt_layer, battery_level < 30 ? ac_color:txt_color);
   text_layer_set_text(batt_layer, batt_buffer);
-  layer_mark_dirty(graph_layer);
 }
 static void battery_handler(BatteryChargeState state){
   battery_level = state.charge_percent;
   charging = state.is_charging;
-  update_battery_pct();
-}
-//Get Config
-static void inbox_received_handler(DictionaryIterator *iter, void *context) {
-  // Color scheme?
-  persist_write_int(color_set, 1);
-  Tuple *bg_r_t = dict_find(iter, bg_R);
-  Tuple *bg_g_t = dict_find(iter, bg_G);
-  Tuple *bg_b_t = dict_find(iter, bg_B);
-  if(bg_r_t && bg_g_t && bg_b_t) {
-    // Apply the color if available
-    int red = bg_r_t->value->int32;
-    int green = bg_g_t->value->int32;
-    int blue = bg_b_t->value->int32;
-
-    // Persist values
-    persist_write_int(bg_R, red);
-    persist_write_int(bg_G, green);
-    persist_write_int(bg_B, blue);
-    // Update colors
-    GColor bg_color = GColorFromRGB(red, green, blue);
-    window_set_background_color(main_window, bg_color);
-    text_layer_set_text_color(month_layer, bg_color);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Background Color - R: %d, G: %d, B: %d", red, green, blue);
-  }
-  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch bg color");}
-  Tuple *txt_r_t = dict_find(iter, txt_R);
-  Tuple *txt_g_t = dict_find(iter, txt_G);
-  Tuple *txt_b_t = dict_find(iter, txt_B);
-  if(txt_r_t && txt_g_t && txt_b_t) {
-    // Apply the color if available
-    int red = txt_r_t->value->int32;
-    int green = txt_g_t->value->int32;
-    int blue = txt_b_t->value->int32;
-    // Persist values
-    persist_write_int(txt_R, red);
-    persist_write_int(txt_G, green);
-    persist_write_int(txt_B, blue);
-    // Update colors
-    GColor txt_color = GColorFromRGB(red, green, blue);
-    text_layer_set_text_color(tens_layer, txt_color);
-    text_layer_set_text_color(ones_layer, txt_color);
-    text_layer_set_text_color(weekday_layer, txt_color);
-    text_layer_set_background_color(month_layer, txt_color);
-    text_layer_set_text_color(date_layer, txt_color);
-    text_layer_set_text_color(batt_layer, txt_color);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Text Color - R: %d, G: %d, B: %d", red, green, blue);
-  }
-  else{
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch text color");
-  }
-  Tuple *ac_r_t = dict_find(iter, ac_R);
-  Tuple *ac_g_t = dict_find(iter, ac_G);
-  Tuple *ac_b_t = dict_find(iter, ac_B);
-  if(ac_r_t && ac_g_t && ac_b_t) {
-    // Apply the color if available
-    int red = ac_r_t->value->int32;
-    int green = ac_g_t->value->int32;
-    int blue = ac_b_t->value->int32;
-    // Persist values
-    persist_write_int(ac_R, red);
-    persist_write_int(ac_G, green);
-    persist_write_int(ac_B, blue);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Accent Color - R: %d, G: %d, B: %d", red, green, blue);
-    // Update colors
-    ac_color = GColorFromRGB(red, green, blue);
-    text_layer_set_text_color(hour_layer, ac_color);
-  }
-  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
-  layer_mark_dirty(cal_layer);
   layer_mark_dirty(graph_layer);
   update_battery_pct();
 }
 static void calendar_box(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  graphics_context_set_stroke_color(ctx, getTxtCol());
+  graphics_context_set_stroke_color(ctx, txt_color);
   graphics_draw_rect(ctx, bounds);
 }
 //Change the time
@@ -245,6 +150,25 @@ static void main_window_load(Window *window) {
   bg_color = GColorBlack;
   txt_color = GColorWhite;
   ac_color = GColorChromeYellow;
+  int persist_set = persist_read_int(color_set);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Persist? - %d", persist_set);
+  if(persist_set!=0){
+    int red = persist_read_int(bg_R);
+    int green = persist_read_int(bg_G);
+    int blue = persist_read_int(bg_B);
+    bg_color = GColorFromRGB(red, green, blue);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Got Background Color - R: %d, G: %d, B: %d", red, green, blue);
+    red = persist_read_int(txt_R);
+    green = persist_read_int(txt_G);
+    blue = persist_read_int(txt_B);
+    txt_color = GColorFromRGB(red, green, blue);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Got Text Color - R: %d, G: %d, B: %d", red, green, blue);
+    red = persist_read_int(ac_R);
+    green = persist_read_int(ac_G);
+    blue = persist_read_int(ac_B);
+    ac_color = GColorFromRGB(red, green, blue);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Got Accent Color - R: %d, G: %d, B: %d", red, green, blue);
+  }
   //Set window background
   window_set_background_color(main_window, bg_color);
   // Get information about the Window
@@ -343,6 +267,78 @@ static void main_window_unload(Window *window){
   text_layer_destroy(month_layer);
   text_layer_destroy(batt_layer);
   layer_destroy(graph_layer);
+}
+//Get Config
+static void inbox_received_handler(DictionaryIterator *iter, void *context) {
+  // Color scheme?
+  persist_write_int(color_set, 1);
+  Tuple *bg_r_t = dict_find(iter, bg_R);
+  Tuple *bg_g_t = dict_find(iter, bg_G);
+  Tuple *bg_b_t = dict_find(iter, bg_B);
+  if(bg_r_t && bg_g_t && bg_b_t) {
+    // Apply the color if available
+    int red = bg_r_t->value->int32;
+    int green = bg_g_t->value->int32;
+    int blue = bg_b_t->value->int32;
+
+    // Persist values
+    persist_write_int(bg_R, red);
+    persist_write_int(bg_G, green);
+    persist_write_int(bg_B, blue);
+    // Update colors
+    GColor bg_color = GColorFromRGB(red, green, blue);
+    window_set_background_color(main_window, bg_color);
+    text_layer_set_text_color(month_layer, bg_color);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Background Color - R: %d, G: %d, B: %d", red, green, blue);
+  }
+  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch bg color");}
+  Tuple *txt_r_t = dict_find(iter, txt_R);
+  Tuple *txt_g_t = dict_find(iter, txt_G);
+  Tuple *txt_b_t = dict_find(iter, txt_B);
+  if(txt_r_t && txt_g_t && txt_b_t) {
+    // Apply the color if available
+    int red = txt_r_t->value->int32;
+    int green = txt_g_t->value->int32;
+    int blue = txt_b_t->value->int32;
+    // Persist values
+    persist_write_int(txt_R, red);
+    persist_write_int(txt_G, green);
+    persist_write_int(txt_B, blue);
+    // Update colors
+    GColor txt_color = GColorFromRGB(red, green, blue);
+    text_layer_set_text_color(tens_layer, txt_color);
+    text_layer_set_text_color(ones_layer, txt_color);
+    text_layer_set_text_color(weekday_layer, txt_color);
+    text_layer_set_background_color(month_layer, txt_color);
+    text_layer_set_text_color(date_layer, txt_color);
+    text_layer_set_text_color(batt_layer, txt_color);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Text Color - R: %d, G: %d, B: %d", red, green, blue);
+  }
+  else{
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch text color");
+  }
+  Tuple *ac_r_t = dict_find(iter, ac_R);
+  Tuple *ac_g_t = dict_find(iter, ac_G);
+  Tuple *ac_b_t = dict_find(iter, ac_B);
+  if(ac_r_t && ac_g_t && ac_b_t) {
+    // Apply the color if available
+    int red = ac_r_t->value->int32;
+    int green = ac_g_t->value->int32;
+    int blue = ac_b_t->value->int32;
+    // Persist values
+    persist_write_int(ac_R, red);
+    persist_write_int(ac_G, green);
+    persist_write_int(ac_B, blue);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Accent Color - R: %d, G: %d, B: %d", red, green, blue);
+    // Update colors
+    ac_color = GColorFromRGB(red, green, blue);
+    text_layer_set_text_color(hour_layer, ac_color);
+  }
+  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
+  layer_mark_dirty(cal_layer);
+  layer_mark_dirty(graph_layer);
+  update_battery_pct();
+  update_time();
 }
 //Init & Deinit
 static void init(){
