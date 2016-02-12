@@ -3,6 +3,7 @@
   <head>
   <title>Elegant Text Configuration</title>
   <link rel='stylesheet' type='text/css' href='css/slate.min.css'>
+  <script src="http://code.jquery.com/jquery-2.2.0.min.js"></script>
   <script src='js/slate.min.js'></script>
   <style>
   .title {
@@ -14,6 +15,9 @@
     color: #888888;
     text-align: center;
   }
+  #theme-box .item-button{
+    margin-bottom: 25px;
+  }
   </style>
   </head>
 
@@ -23,11 +27,21 @@
     <div class='item-container'>
       <div class='item-container-content'>
         <div class='item'>
-          Use this configuration page to choose the settings you would like applied to this watchface.
+          Use this configuration page to choose the colors you would like applied to this watchface.
         </div>
       </div>
     </div>
-
+    <div class='item-container'>
+      <div class='item-container-header'>Premade Themes:</div>
+      <div class='item-container-content'>
+        <div class='item-container'>
+          <div class='button-container' id="theme-box">
+            <input type='button' class='item-button' value='Default (Black, White and Goldenrod)' onclick="set_theme('default')">
+            <input type='button' class='item-button' value='Infected (Purple, Grey and Green)' onclick="set_theme('infected')">
+          </div>
+        </div>
+      </div>
+    </div>
     <div class='item-container'>
       <div class='item-container-header'>Color Schema</div>
       <div class='item-container-content'>
@@ -106,7 +120,20 @@
     var return_to = getQueryParam('return_to', 'pebblejs://close#');
     document.location = return_to + encodeURIComponent(JSON.stringify(getConfigData()));
   });
-
+  function set_theme(name){
+    var theme = {"default": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#FFAA00'}, "infected": {"bg": '#550055', "txt": '#AAAAAA', "ac": '#55FF00'}}
+    console.log(name, theme[name])
+    var backgroundColorPicker = document.getElementById('background_color_picker');
+    var textColorPicker = document.getElementById('text_color_picker');
+    var accentColorPicker = document.getElementById('accent_color_picker');
+    backgroundColorPicker.value = theme[name]["bg"]
+    textColorPicker.value = theme[name]["txt"]
+    accentColorPicker.value = theme[name]["ac"]
+    $("#background_color_picker + .item-styled-color .value").css("background-color", theme[name]["bg"])
+    $("#text_color_picker + .item-styled-color .value").css("background-color", theme[name]["txt"])
+    $("#accent_color_picker + .item-styled-color .value").css("background-color", theme[name]["ac"])
+    console.log("Set new theme:", theme[name]["bg"], theme[name]["txt"], theme[name]["ac"])
+  }
   (function() {
     var backgroundColorPicker = document.getElementById('background_color_picker');
     var textColorPicker = document.getElementById('text_color_picker');
