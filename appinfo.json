@@ -13,9 +13,15 @@
     "configurable"
   ],
   "appKeys": {
-    "BG": 0,
-    "TXT": 1,
-    "AC": 2
+    "bg_R": 0,
+    "bg_G": 1,
+    "bg_B": 2,
+    "txt_R": 3,
+    "txt_G": 4,
+    "txt_B": 5,
+    "ac_R": 6,
+    "ac_G": 7,
+    "ac_B": 8
   },
   "resources": {
     "media": []

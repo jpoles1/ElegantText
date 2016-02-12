@@ -2,14 +2,14 @@
 #include <math.h>
 #define KEY_TEMPERATURE 0
 #define bg_R 0
-#define bg_G 1
-#define bg_B 2
-#define txt_R 3
-#define txt_G 4
-#define txt_B 5
-#define ac_R 6
-#define ac_G 7
-#define ac_B 8
+#define bg_G 0
+#define bg_B 0
+#define txt_R 0
+#define txt_G 0
+#define txt_B 0
+#define ac_R 0
+#define ac_G 0
+#define ac_B 0
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
@@ -51,7 +51,6 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
 
     GColor bg_color = GColorFromRGB(red, green, blue);
     window_set_background_color(main_window, bg_color);
-    //text_layer_set_text_color(s_text_layer, gcolor_is_dark(bg_color) ? GColorWhite : GColorBlack);
   }
 }
 //Draw Battery
@@ -169,16 +168,24 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
 //Load and Unload Window (create and setup resources)
 static void main_window_load(Window *window) {
   GColor bg_color = GColorBlack;
+  GColor txt_color = GColorWhite;
+  GColor ac_color = GColorChromeYellow;
   if(persist_read_bool(bg_R)) {
     int red = persist_read_int(bg_R);
     int green = persist_read_int(bg_G);
     int blue = persist_read_int(bg_B);
     bg_color = GColorFromRGB(red, green, blue);
-    window_set_background_color(main_window, bg_color);
+    red = persist_read_int(txt_R);
+    green = persist_read_int(txt_G);
+    blue = persist_read_int(txt_B);
+    txt_color = GColorFromRGB(red, green, blue);
+    red = persist_read_int(ac_R);
+    green = persist_read_int(ac_G);
+    blue = persist_read_int(ac_B);
+    ac_color = GColorFromRGB(red, green, blue);
   }
-  else{
-    window_set_background_color(main_window, bg_color);
-  }
+  //Set window background
+  window_set_background_color(main_window, bg_color);
   // Get information about the Window
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
@@ -187,34 +194,34 @@ static void main_window_load(Window *window) {
     GRect(0, PBL_IF_ROUND_ELSE(houry, houry), bounds.size.w, 50)
   );
   text_layer_set_background_color(hour_layer, GColorClear);
-  text_layer_set_text_color(hour_layer, GColorChromeYellow);
+  text_layer_set_text_color(hour_layer, ac_color);
   text_layer_set_text(hour_layer, "hour");
   //Tens
   tens_layer = text_layer_create(
     GRect(0, PBL_IF_ROUND_ELSE(tensy, tensy), bounds.size.w, 50)
   );
   text_layer_set_background_color(tens_layer, GColorClear);
-  text_layer_set_text_color(tens_layer, GColorWhite);
+  text_layer_set_text_color(tens_layer, txt_color);
   text_layer_set_text(tens_layer, "tens");
   //Ones
   ones_layer = text_layer_create(
     GRect(0, PBL_IF_ROUND_ELSE(onesy, onesy), bounds.size.w, 50)
   );
   text_layer_set_background_color(ones_layer, GColorClear);
-  text_layer_set_text_color(ones_layer, GColorWhite);
+  text_layer_set_text_color(ones_layer, txt_color);
   text_layer_set_text(ones_layer, "ones");
   //Day of Week
   weekday_layer = text_layer_create(
     GRect(15, batterypcty, 40, 40)
   );
   text_layer_set_background_color(weekday_layer, GColorClear);
-  text_layer_set_text_color(weekday_layer, GColorWhite);
+  text_layer_set_text_color(weekday_layer, txt_color);
   text_layer_set_text(weekday_layer, "XX %");
   //Month
   month_layer = text_layer_create(
     GRect(datex, datey-4, 40, 21)
   );
-  text_layer_set_background_color(month_layer, GColorWhite);
+  text_layer_set_background_color(month_layer, txt_color);
   text_layer_set_text_color(month_layer, bg_color);
   text_layer_set_text(month_layer, "Mnth");
   //Date
@@ -222,14 +229,14 @@ static void main_window_load(Window *window) {
     GRect(datex, datey+16, 40, 40)
   );
   text_layer_set_background_color(date_layer, GColorClear);
-  text_layer_set_text_color(date_layer, GColorWhite);
+  text_layer_set_text_color(date_layer, txt_color);
   text_layer_set_text(date_layer, "Day");
   //Battery %
   batt_layer = text_layer_create(
     GRect(batterypctx, batterypcty, 40, 40)
   );
   text_layer_set_background_color(batt_layer, GColorClear);
-  text_layer_set_text_color(batt_layer, GColorWhite);
+  text_layer_set_text_color(batt_layer, txt_color);
   text_layer_set_text(batt_layer, "XX %");
   //Setup Fonts
   text_layer_set_font(hour_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
