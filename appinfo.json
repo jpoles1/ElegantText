@@ -3,7 +3,7 @@
   "shortName": "ElegText",
   "longName": "Elegant Text",
   "companyName": "jpoles1",
-  "versionLabel": "1.1",
+  "versionLabel": "1.2",
   "sdkVersion": "3",
   "targetPlatforms": ["basalt"],
   "watchapp": {
@@ -13,6 +13,7 @@
     "configurable"
   ],
   "appKeys": {
+    "color_set": 0,
     "bg_R": 0,
     "bg_G": 1,
     "bg_B": 2,

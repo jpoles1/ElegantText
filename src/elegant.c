@@ -1,6 +1,6 @@
 #include <pebble.h>
 #include <math.h>
-#define KEY_TEMPERATURE 0
+#define color_set 0
 #define bg_R 0
 #define bg_G 1
 #define bg_B 2
@@ -16,6 +16,9 @@ static TextLayer *weekday_layer, *date_layer, *month_layer;
 static TextLayer *batt_layer;
 static Layer *graph_layer;
 static Layer *cal_layer;
+GColor bg_color;
+GColor txt_color;
+GColor ac_color;
 //Battery State Holder
 static int battery_level;
 static bool charging;
@@ -35,6 +38,7 @@ int datey = 122;
 //Get Config
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   // Color scheme?
+  persist_write_bool(color_set, 1);
   Tuple *bg_r_t = dict_find(iter, bg_R);
   Tuple *bg_g_t = dict_find(iter, bg_G);
   Tuple *bg_b_t = dict_find(iter, bg_B);
@@ -48,9 +52,10 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     persist_write_int(bg_R, red);
     persist_write_int(bg_G, green);
     persist_write_int(bg_B, blue);
-
+    // Update colors
     GColor bg_color = GColorFromRGB(red, green, blue);
     window_set_background_color(main_window, bg_color);
+    text_layer_set_text_color(month_layer, bg_color);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Background Color - R: %d, G: %d, B: %d", red, green, blue);
   }
   else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch bg color");}
@@ -62,11 +67,18 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     int red = txt_r_t->value->int32;
     int green = txt_g_t->value->int32;
     int blue = txt_b_t->value->int32;
-
     // Persist values
     persist_write_int(txt_R, red);
     persist_write_int(txt_G, green);
     persist_write_int(txt_B, blue);
+    // Update colors
+    GColor txt_color = GColorFromRGB(red, green, blue);
+    text_layer_set_text_color(tens_layer, txt_color);
+    text_layer_set_text_color(ones_layer, txt_color);
+    text_layer_set_text_color(weekday_layer, txt_color);
+    text_layer_set_background_color(month_layer, txt_color);
+    text_layer_set_text_color(date_layer, txt_color);
+    text_layer_set_text_color(batt_layer, txt_color);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Text Color - R: %d, G: %d, B: %d", red, green, blue);
   }
   else{
@@ -85,8 +97,12 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     persist_write_int(ac_G, green);
     persist_write_int(ac_B, blue);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Accent Color - R: %d, G: %d, B: %d", red, green, blue);
+    // Update colors
+    ac_color = GColorFromRGB(red, green, blue);
+    text_layer_set_text_color(hour_layer, ac_color);
   }
   else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
+  layer_mark_dirty(cal_layer);
 }
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
@@ -94,20 +110,18 @@ static void update_battery(Layer *layer, GContext *ctx) {
   int width = (int)(float)(((float)battery_level / 100.0F) * (float)bounds.size.w);
   graphics_context_set_fill_color(ctx, GColorDarkGray);
   graphics_fill_rect(ctx, bounds, 4, GCornersAll);
-  graphics_context_set_fill_color(ctx, charging ? GColorGreen:GColorChromeYellow);
+  graphics_context_set_fill_color(ctx, charging ? GColorGreen:ac_color);
   graphics_fill_rect(ctx, GRect(0, 0, width, bounds.size.h), 4, GCornersAll);
 }
 static void calendar_box(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  graphics_context_set_stroke_color(ctx, GColorWhite);
+  graphics_context_set_stroke_color(ctx, txt_color);
   graphics_draw_rect(ctx, bounds);
-  int divbary = 16;
-  graphics_draw_rect(ctx, GRect(0, divbary, bounds.size.w, bounds.size.h-divbary));
 }
 static void update_battery_pct(){
   static char batt_buffer[4] = "";
   snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
-  text_layer_set_text_color(batt_layer, battery_level < 30 ? GColorRed:GColorWhite);
+  text_layer_set_text_color(batt_layer, battery_level < 30 ? ac_color:txt_color);
   text_layer_set_text(batt_layer, batt_buffer);
 }
 static void battery_handler(BatteryChargeState state){
@@ -202,32 +216,26 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
 }
 //Load and Unload Window (create and setup resources)
 static void main_window_load(Window *window) {
-  GColor bg_color = GColorBlack;
-  GColor txt_color = GColorWhite;
-  GColor ac_color = GColorChromeYellow;
-  if(persist_read_int(bg_R)) {
+  bg_color = GColorBlack;
+  txt_color = GColorWhite;
+  ac_color = GColorChromeYellow;
+  if(persist_read_int(color_set)==1){
     int red = persist_read_int(bg_R);
     int green = persist_read_int(bg_G);
     int blue = persist_read_int(bg_B);
     bg_color = GColorFromRGB(red, green, blue);
-  }
-  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch bg color");}
-  if(persist_read_int(txt_R)) {
-    int red = persist_read_int(txt_R);
-    int green = persist_read_int(txt_G);
-    int blue = persist_read_int(txt_B);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Background Color - R: %d, G: %d, B: %d", red, green, blue);
+    red = persist_read_int(txt_R);
+    green = persist_read_int(txt_G);
+    blue = persist_read_int(txt_B);
     txt_color = GColorFromRGB(red, green, blue);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Text Color - R: %d, G: %d, B: %d", red, green, blue);
-  }
-  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch txt color");}
-  if(persist_read_int(ac_R)) {
-    int red = persist_read_int(ac_R);
-    int green = persist_read_int(ac_G);
-    int blue = persist_read_int(ac_B);
+    red = persist_read_int(ac_R);
+    green = persist_read_int(ac_G);
+    blue = persist_read_int(ac_B);
     ac_color = GColorFromRGB(red, green, blue);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Accent Color - R: %d, G: %d, B: %d", red, green, blue);
   }
-  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
   //Set window background
   window_set_background_color(main_window, bg_color);
   // Get information about the Window
@@ -310,7 +318,7 @@ static void main_window_load(Window *window) {
   //Draw Graphics
   graph_layer = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
   layer_set_update_proc(graph_layer, update_battery);
-  cal_layer = layer_create(GRect(datex, datey, 40, 40));
+  cal_layer = layer_create(GRect(datex, datey-5, 40, 40+5));
   layer_set_update_proc(cal_layer, calendar_box);
   //Add to Window
   layer_add_child(window_get_root_layer(window), cal_layer);
