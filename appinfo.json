@@ -15,14 +15,14 @@
   "appKeys": {
     "color_set": 0,
     "bg_R": 0,
-    "bg_G": 1,
-    "bg_B": 2,
-    "txt_R": 3,
-    "txt_G": 4,
-    "txt_B": 5,
-    "ac_R": 6,
-    "ac_G": 7,
-    "ac_B": 8
+    "bg_G": 0,
+    "bg_B": 0,
+    "txt_R": 255,
+    "txt_G": 255,
+    "txt_B": 255,
+    "ac_R": 170,
+    "ac_G": 255,
+    "ac_B": 0
   },
   "resources": {
     "media": []

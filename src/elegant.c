@@ -2,14 +2,14 @@
 #include <math.h>
 #define color_set 0
 #define bg_R 0
-#define bg_G 1
-#define bg_B 2
-#define txt_R 3
-#define txt_G 4
-#define txt_B 5
-#define ac_R 6
-#define ac_G 7
-#define ac_B 8
+#define bg_G 0
+#define bg_B 0
+#define txt_R 255
+#define txt_G 255
+#define txt_B 255
+#define ac_R 255
+#define ac_G 170
+#define ac_B 0
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
@@ -35,10 +35,55 @@ int batterypctx = 96;
 int batterypcty = 123;
 int datex = 50;
 int datey = 122;
+static GColor getBgCol(){
+  int red = persist_read_int(bg_R);
+  int green = persist_read_int(bg_G);
+  int blue = persist_read_int(bg_B);
+  bg_color = GColorFromRGB(red, green, blue);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Background Color - R: %d, G: %d, B: %d", red, green, blue);
+  return(bg_color);
+}
+static GColor getTxtCol(){
+  int red = persist_read_int(txt_R);
+  int green = persist_read_int(txt_G);
+  int blue = persist_read_int(txt_B);
+  txt_color = GColorFromRGB(red, green, blue);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Text Color - R: %d, G: %d, B: %d", red, green, blue);
+  return(txt_color);
+}
+static GColor getAcCol(){
+  int red = persist_read_int(ac_R);
+  int green = persist_read_int(ac_G);
+  int blue = persist_read_int(ac_B);
+  ac_color = GColorFromRGB(red, green, blue);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Accent Color - R: %d, G: %d, B: %d", red, green, blue);
+  return(ac_color);
+}
+//Draw Battery
+static void update_battery(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+  int width = (int)(float)(((float)battery_level / 100.0F) * (float)bounds.size.w);
+  graphics_context_set_fill_color(ctx, GColorDarkGray);
+  graphics_fill_rect(ctx, bounds, 4, GCornersAll);
+  graphics_context_set_fill_color(ctx, charging ? GColorGreen:getAcCol());
+  graphics_fill_rect(ctx, GRect(0, 0, width, bounds.size.h), 4, GCornersAll);
+}
+static void update_battery_pct(){
+  static char batt_buffer[4] = "";
+  snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
+  text_layer_set_text_color(batt_layer, battery_level < 30 ? getAcCol():getTxtCol());
+  text_layer_set_text(batt_layer, batt_buffer);
+  layer_mark_dirty(graph_layer);
+}
+static void battery_handler(BatteryChargeState state){
+  battery_level = state.charge_percent;
+  charging = state.is_charging;
+  update_battery_pct();
+}
 //Get Config
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   // Color scheme?
-  persist_write_bool(color_set, 1);
+  persist_write_int(color_set, 1);
   Tuple *bg_r_t = dict_find(iter, bg_R);
   Tuple *bg_g_t = dict_find(iter, bg_G);
   Tuple *bg_b_t = dict_find(iter, bg_B);
@@ -103,32 +148,13 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   }
   else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
   layer_mark_dirty(cal_layer);
-}
-//Draw Battery
-static void update_battery(Layer *layer, GContext *ctx) {
-  GRect bounds = layer_get_bounds(layer);
-  int width = (int)(float)(((float)battery_level / 100.0F) * (float)bounds.size.w);
-  graphics_context_set_fill_color(ctx, GColorDarkGray);
-  graphics_fill_rect(ctx, bounds, 4, GCornersAll);
-  graphics_context_set_fill_color(ctx, charging ? GColorGreen:ac_color);
-  graphics_fill_rect(ctx, GRect(0, 0, width, bounds.size.h), 4, GCornersAll);
+  layer_mark_dirty(graph_layer);
+  update_battery_pct();
 }
 static void calendar_box(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
-  graphics_context_set_stroke_color(ctx, txt_color);
+  graphics_context_set_stroke_color(ctx, getTxtCol());
   graphics_draw_rect(ctx, bounds);
-}
-static void update_battery_pct(){
-  static char batt_buffer[4] = "";
-  snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
-  text_layer_set_text_color(batt_layer, battery_level < 30 ? ac_color:txt_color);
-  text_layer_set_text(batt_layer, batt_buffer);
-}
-static void battery_handler(BatteryChargeState state){
-  battery_level = state.charge_percent;
-  charging = state.is_charging;
-  layer_mark_dirty(graph_layer);
-  update_battery_pct();
 }
 //Change the time
 static void update_time() {
@@ -219,23 +245,6 @@ static void main_window_load(Window *window) {
   bg_color = GColorBlack;
   txt_color = GColorWhite;
   ac_color = GColorChromeYellow;
-  if(persist_read_int(color_set)==1){
-    int red = persist_read_int(bg_R);
-    int green = persist_read_int(bg_G);
-    int blue = persist_read_int(bg_B);
-    bg_color = GColorFromRGB(red, green, blue);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Background Color - R: %d, G: %d, B: %d", red, green, blue);
-    red = persist_read_int(txt_R);
-    green = persist_read_int(txt_G);
-    blue = persist_read_int(txt_B);
-    txt_color = GColorFromRGB(red, green, blue);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Text Color - R: %d, G: %d, B: %d", red, green, blue);
-    red = persist_read_int(ac_R);
-    green = persist_read_int(ac_G);
-    blue = persist_read_int(ac_B);
-    ac_color = GColorFromRGB(red, green, blue);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Accent Color - R: %d, G: %d, B: %d", red, green, blue);
-  }
   //Set window background
   window_set_background_color(main_window, bg_color);
   // Get information about the Window
