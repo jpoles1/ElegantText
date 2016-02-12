@@ -1,7 +1,9 @@
 #include <pebble.h>
 #include <math.h>
 #define KEY_TEMPERATURE 0
-
+#define bg_R 0
+#define bg_G 1
+#define bg_B 2
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
@@ -24,6 +26,28 @@ int batterypctx = 96;
 int batterypcty = 123;
 int datex = 50;
 int datey = 122;
+//Get Config
+static void inbox_received_handler(DictionaryIterator *iter, void *context) {
+  // Color scheme?
+  Tuple *bg_r_t = dict_find(iter, bg_R);
+  Tuple *bg_g_t = dict_find(iter, bg_G);
+  Tuple *bg_b_t = dict_find(iter, bg_B);
+  if(bg_r_t && bg_g_t && bg_b_t) {
+    // Apply the color if available
+    int red = bg_r_t->value->int32;
+    int green = bg_g_t->value->int32;
+    int blue = bg_b_t->value->int32;
+
+    // Persist values
+    persist_write_int(bg_R, red);
+    persist_write_int(bg_G, green);
+    persist_write_int(bg_B, blue);
+
+    GColor bg_color = GColorFromRGB(red, green, blue);
+    window_set_background_color(main_window, bg_color);
+    //text_layer_set_text_color(s_text_layer, gcolor_is_dark(bg_color) ? GColorWhite : GColorBlack);
+  }
+}
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -138,6 +162,17 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
 }
 //Load and Unload Window (create and setup resources)
 static void main_window_load(Window *window) {
+  GColor bg_color = GColorBlack;
+  if(persist_read_bool(bg_R)) {
+    int red = persist_read_int(bg_R);
+    int green = persist_read_int(bg_G);
+    int blue = persist_read_int(bg_B);
+    bg_color = GColorFromRGB(red, green, blue);
+    window_set_background_color(main_window, bg_color);
+  }
+  else{
+    window_set_background_color(main_window, bg_color);
+  }
   // Get information about the Window
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
@@ -174,7 +209,7 @@ static void main_window_load(Window *window) {
     GRect(datex, datey-4, 40, 21)
   );
   text_layer_set_background_color(month_layer, GColorWhite);
-  text_layer_set_text_color(month_layer, GColorBlack);
+  text_layer_set_text_color(month_layer, bg_color);
   text_layer_set_text(month_layer, "Mnth");
   //Date
   date_layer = text_layer_create(
@@ -238,7 +273,6 @@ static void main_window_unload(Window *window){
 //Init & Deinit
 static void init(){
   main_window = window_create();
-  window_set_background_color(main_window, GColorBlack);
   window_set_window_handlers(main_window, (WindowHandlers) {
     .load = main_window_load,
     .unload = main_window_unload
@@ -250,6 +284,9 @@ static void init(){
   //Run initial updates
   update_time();
   battery_handler(battery_state_service_peek());
+  //Read from config
+  app_message_register_inbox_received(inbox_received_handler);
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 static void deinit(){
   window_destroy(main_window);
