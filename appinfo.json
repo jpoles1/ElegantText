@@ -13,9 +13,9 @@
     "configurable"
   ],
   "appKeys": {
-    "bg_R": 0,
-    "bg_G": 1,
-    "bg_B": 2
+    "BG": 0,
+    "TXT": 1,
+    "AC": 2
   },
   "resources": {
     "media": []

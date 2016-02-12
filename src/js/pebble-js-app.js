@@ -21,6 +21,12 @@ Pebble.addEventListener('webviewclosed', function(e) {
   dict['bg_R'] = parseInt(backgroundColor.substring(2, 4), 16);
   dict['bg_G'] = parseInt(backgroundColor.substring(4, 6), 16);
   dict['bg_B'] = parseInt(backgroundColor.substring(6), 16);
+  dict['txt_R'] = parseInt(backgroundColor.substring(2, 4), 16);
+  dict['txt_G'] = parseInt(backgroundColor.substring(4, 6), 16);
+  dict['txt_B'] = parseInt(backgroundColor.substring(6), 16);
+  dict['ac_R'] = parseInt(backgroundColor.substring(2, 4), 16);
+  dict['ac_G'] = parseInt(backgroundColor.substring(4, 6), 16);
+  dict['ac_B'] = parseInt(backgroundColor.substring(6), 16);
 
   // Send to watchapp
   Pebble.sendAppMessage(dict, function() {

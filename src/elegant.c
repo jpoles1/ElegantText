@@ -4,6 +4,12 @@
 #define bg_R 0
 #define bg_G 1
 #define bg_B 2
+#define txt_R 3
+#define txt_G 4
+#define txt_B 5
+#define ac_R 6
+#define ac_G 7
+#define ac_B 8
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
