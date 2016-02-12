@@ -2,14 +2,14 @@
 #include <math.h>
 #define KEY_TEMPERATURE 0
 #define bg_R 0
-#define bg_G 0
-#define bg_B 0
-#define txt_R 0
-#define txt_G 0
-#define txt_B 0
-#define ac_R 0
-#define ac_G 0
-#define ac_B 0
+#define bg_G 1
+#define bg_B 2
+#define txt_R 3
+#define txt_G 4
+#define txt_B 5
+#define ac_R 6
+#define ac_G 7
+#define ac_B 8
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
@@ -51,7 +51,42 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
 
     GColor bg_color = GColorFromRGB(red, green, blue);
     window_set_background_color(main_window, bg_color);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Background Color - R: %d, G: %d, B: %d", red, green, blue);
   }
+  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch bg color");}
+  Tuple *txt_r_t = dict_find(iter, txt_R);
+  Tuple *txt_g_t = dict_find(iter, txt_G);
+  Tuple *txt_b_t = dict_find(iter, txt_B);
+  if(txt_r_t && txt_g_t && txt_b_t) {
+    // Apply the color if available
+    int red = txt_r_t->value->int32;
+    int green = txt_g_t->value->int32;
+    int blue = txt_b_t->value->int32;
+
+    // Persist values
+    persist_write_int(txt_R, red);
+    persist_write_int(txt_G, green);
+    persist_write_int(txt_B, blue);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Text Color - R: %d, G: %d, B: %d", red, green, blue);
+  }
+  else{
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch text color");
+  }
+  Tuple *ac_r_t = dict_find(iter, ac_R);
+  Tuple *ac_g_t = dict_find(iter, ac_G);
+  Tuple *ac_b_t = dict_find(iter, ac_B);
+  if(ac_r_t && ac_g_t && ac_b_t) {
+    // Apply the color if available
+    int red = ac_r_t->value->int32;
+    int green = ac_g_t->value->int32;
+    int blue = ac_b_t->value->int32;
+    // Persist values
+    persist_write_int(ac_R, red);
+    persist_write_int(ac_G, green);
+    persist_write_int(ac_B, blue);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Accent Color - R: %d, G: %d, B: %d", red, green, blue);
+  }
+  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
 }
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
@@ -170,20 +205,29 @@ static void main_window_load(Window *window) {
   GColor bg_color = GColorBlack;
   GColor txt_color = GColorWhite;
   GColor ac_color = GColorChromeYellow;
-  if(persist_read_bool(bg_R)) {
+  if(persist_read_int(bg_R)) {
     int red = persist_read_int(bg_R);
     int green = persist_read_int(bg_G);
     int blue = persist_read_int(bg_B);
     bg_color = GColorFromRGB(red, green, blue);
-    red = persist_read_int(txt_R);
-    green = persist_read_int(txt_G);
-    blue = persist_read_int(txt_B);
-    txt_color = GColorFromRGB(red, green, blue);
-    red = persist_read_int(ac_R);
-    green = persist_read_int(ac_G);
-    blue = persist_read_int(ac_B);
-    ac_color = GColorFromRGB(red, green, blue);
   }
+  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch bg color");}
+  if(persist_read_int(txt_R)) {
+    int red = persist_read_int(txt_R);
+    int green = persist_read_int(txt_G);
+    int blue = persist_read_int(txt_B);
+    txt_color = GColorFromRGB(red, green, blue);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Text Color - R: %d, G: %d, B: %d", red, green, blue);
+  }
+  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch txt color");}
+  if(persist_read_int(ac_R)) {
+    int red = persist_read_int(ac_R);
+    int green = persist_read_int(ac_G);
+    int blue = persist_read_int(ac_B);
+    ac_color = GColorFromRGB(red, green, blue);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Accent Color - R: %d, G: %d, B: %d", red, green, blue);
+  }
+  else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
   //Set window background
   window_set_background_color(main_window, bg_color);
   // Get information about the Window
