@@ -119,9 +119,13 @@
     var accentColorPicker = document.getElementById('accent_color_picker');
 
     // Load any previously saved configuration, if available
-    if(localStorage['high_contrast']) {
+    if(localStorage['background_color']) {
       backgroundColorPicker.value = localStorage['background_color'];
+    }
+    if(localStorage['text_color']){
       textColorPicker.value = localStorage['text_color'];
+    }
+    if(localStorage['accent_color']){
       accentColorPicker.value = localStorage['accent_color'];
     }
   })();
