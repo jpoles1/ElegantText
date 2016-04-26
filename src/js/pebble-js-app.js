@@ -4,6 +4,7 @@ Pebble.addEventListener('ready', function() {
 
 Pebble.addEventListener('showConfiguration', function() {
   var url = 'http://jpoles1.github.io/ElegantText/';
+  //var url = "http://192.168.1.150:8080/"
   console.log('Showing configuration page: ' + url);
 
   Pebble.openURL(url);
@@ -27,6 +28,9 @@ Pebble.addEventListener('webviewclosed', function(e) {
   dict['ac_R'] = parseInt(accentColor.substring(2, 4), 16);
   dict['ac_G'] = parseInt(accentColor.substring(4, 6), 16);
   dict['ac_B'] = parseInt(accentColor.substring(6), 16);
+  dict['blt_vibrate'] = configData['blt_vibrate']
+  dict['blt_indicator'] = configData['blt_indicator']
+
 
   // Send to watchapp
   Pebble.sendAppMessage(dict, function() {
