@@ -22,7 +22,9 @@
     "txt_B": 6,
     "ac_R": 7,
     "ac_G": 8,
-    "ac_B": 9
+    "ac_B": 9,
+    "blt_vibrate": 1,
+    "blt_indicator": 0
   },
   "resources": {
     "media": [
