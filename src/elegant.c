@@ -199,7 +199,7 @@ static void main_window_load(Window *window) {
   text_layer_set_text(ones_layer, "ones");
   //Day of Week
   weekday_layer = text_layer_create(
-    GRect(15, batterypcty, 40, 40)
+    GRect(10, batterypcty, 40, 40)
   );
   text_layer_set_background_color(weekday_layer, GColorClear);
   text_layer_set_text_color(weekday_layer, txt_color);
