@@ -32,6 +32,25 @@
       </div>
     </div>
     <div class='item-container'>
+      <div class='item-container-header'>Bluetooth Connection:</div>
+      <div class='item-container-content'>
+        <div class='item'>
+          The following options will notify you when your bluetooth is disconnected.
+        </div>
+      </div>
+      <br>
+      <div class='item-container-content'>
+        <label class='item'>
+          Vibrate
+          <input id='blt_vibrate' type='checkbox' class='item-toggle'>
+        </label>
+        <label class='item'>
+          Indicator
+          <input id='blt_indicator' type='checkbox' class='item-toggle'>
+        </label>
+      </div>
+    </div>
+    <div class='item-container'>
       <div class='item-container-header'>Premade Themes:</div>
       <div class='item-container-content'>
         <div class='item-container'>
@@ -49,7 +68,7 @@
       <div class='item-container-content'>
         <label class='item'>
           Background Color
-          <input id='background_color_picker' type='text' class='item-color item-color-normal' value='#000000'>
+          <input id='background_color' type='text' class='item-color item-color-normal' value='#000000'>
         </label>
       </div>
     </div>
@@ -58,7 +77,7 @@
       <div class='item-container-content'>
         <label class='item'>
           Text Color
-          <input id='text_color_picker' type='text' class='item-color item-color-normal' value='#FFFFFF'>
+          <input id='text_color' type='text' class='item-color item-color-normal' value='#FFFFFF'>
         </label>
       </div>
     </div>
@@ -67,7 +86,7 @@
       <div class='item-container-content'>
         <label class='item'>
           Accent Color
-          <input id='accent_color_picker' type='text' class='item-color item-color-normal' value='#FFAA00'>
+          <input id='accent_color' type='text' class='item-color item-color-normal' value='#FFAA00'>
         </label>
       </div>
     </div>
@@ -102,21 +121,24 @@
   </body>
   <script>
   function getConfigData() {
-    var backgroundColorPicker = document.getElementById('background_color_picker');
-    var textColorPicker = document.getElementById('text_color_picker');
-    var accentColorPicker = document.getElementById('accent_color_picker');
+    var bltVibrate = document.getElementById('blt_vibrate');
+    var bltIndicator = document.getElementById('blt_indicator');
+    var backgroundColorPicker = document.getElementById('background_color');
+    var textColorPicker = document.getElementById('text_color');
+    var accentColorPicker = document.getElementById('accent_color');
 
     var options = {
       'background_color': backgroundColorPicker.value,
       'text_color': textColorPicker.value,
-      'accent_color': accentColorPicker.value
+      'accent_color': accentColorPicker.value,
+      'blt_vibrate': bltVibrate.value,
+      'blt_indicator': bltIndicator.value
     };
 
     // Save for next launch
-    localStorage['background_color'] = options['background_color'];
-    localStorage['text_color'] = options['text_color'];
-    localStorage['accent_color'] = options['accent_color'];
-
+    for(opt in options){
+      localStorage['opt'] = options['opt'];
+    }
     console.log('Got options: ' + JSON.stringify(options));
     return options;
   }
@@ -144,15 +166,15 @@
   function set_theme(name){
     var theme = {"default": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#FFAA00'}, "cyborg": {"bg": '#550055', "txt": '#FFFFFF', "ac": '#55FF00'}, "aqua": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#AAAAFF'}, "burnt": {"bg": '#FFAA00', "txt": '#000000', "ac": '#000000'}}
     console.log(name, theme[name])
-    var backgroundColorPicker = document.getElementById('background_color_picker');
-    var textColorPicker = document.getElementById('text_color_picker');
-    var accentColorPicker = document.getElementById('accent_color_picker');
+    var backgroundColorPicker = document.getElementById('background_color');
+    var textColorPicker = document.getElementById('text_color');
+    var accentColorPicker = document.getElementById('accent_color');
     backgroundColorPicker.value = theme[name]["bg"]
     textColorPicker.value = theme[name]["txt"]
     accentColorPicker.value = theme[name]["ac"]
-    $("#background_color_picker + .item-styled-color .value").css("background-color", theme[name]["bg"])
-    $("#text_color_picker + .item-styled-color .value").css("background-color", theme[name]["txt"])
-    $("#accent_color_picker + .item-styled-color .value").css("background-color", theme[name]["ac"])
+    $("#background_color + .item-styled-color .value").css("background-color", theme[name]["bg"])
+    $("#text_color + .item-styled-color .value").css("background-color", theme[name]["txt"])
+    $("#accent_color + .item-styled-color .value").css("background-color", theme[name]["ac"])
     console.log("Set new theme:", theme[name]["bg"], theme[name]["txt"], theme[name]["ac"])
   }
   function print_conf(){
@@ -160,19 +182,23 @@
     $('#curr_set').html("Background: "+x["background_color"]+"; Text: "+x["text_color"]+"; Accent: "+x["accent_color"])
   }
   (function() {
-    var backgroundColorPicker = document.getElementById('background_color_picker');
-    var textColorPicker = document.getElementById('text_color_picker');
-    var accentColorPicker = document.getElementById('accent_color_picker');
+    var bltVibrate = document.getElementById('blt_vibrate');
+    var bltIndicator = document.getElementById('blt_indicator');
+    var backgroundColorPicker = document.getElementById('background_color');
+    var textColorPicker = document.getElementById('text_color');
+    var accentColorPicker = document.getElementById('accent_color');
 
-    // Load any previously saved configuration, if available
-    if(localStorage['background_color']) {
-      backgroundColorPicker.value = localStorage['background_color'];
-    }
-    if(localStorage['text_color']){
-      textColorPicker.value = localStorage['text_color'];
-    }
-    if(localStorage['accent_color']){
-      accentColorPicker.value = localStorage['accent_color'];
+    var options = {
+      'background_color': backgroundColorPicker,
+      'text_color': textColorPicker,
+      'accent_color': accentColorPicker,
+      'blt_vibrate': bltVibrate,
+      'blt_indicator': bltIndicator
+    };
+    for(opt in options){
+      if(localStorage[opt]) {
+        options[opt].value = localStorage[opt];
+      }
     }
   })();
   </script>
