@@ -19,6 +19,7 @@ static Layer *cal_layer;
 static GColor bg_color;
 static GColor txt_color;
 static GColor ac_color;
+static GFont fontawesome;
 //Battery State Holder
 static int battery_level;
 static bool charging;
@@ -46,8 +47,9 @@ static void update_battery(Layer *layer, GContext *ctx) {
 }
 static void update_battery_pct(){
   static char batt_buffer[4] = "";
-  snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
-  text_layer_set_text_color(batt_layer, battery_level < 30 ? ac_color:txt_color);
+  //snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
+  snprintf(batt_buffer, sizeof(batt_buffer), "");
+  //text_layer_set_text_color(batt_layer, battery_level < 30 ? ac_color:txt_color);
   text_layer_set_text(batt_layer, batt_buffer);
 }
 static void battery_handler(BatteryChargeState state){
@@ -230,7 +232,8 @@ static void main_window_load(Window *window) {
   text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_font(month_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_font(weekday_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  text_layer_set_font(batt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  //text_layer_set_font(batt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_font(batt_layer, fontawesome);
   //Optional text centering
   if(centered){
     text_layer_set_text_alignment(hour_layer, GTextAlignmentCenter);
@@ -342,6 +345,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
 }
 //Init & Deinit
 static void init(){
+  fontawesome = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONTAWESOME_18));
   main_window = window_create();
   window_set_window_handlers(main_window, (WindowHandlers) {
     .load = main_window_load,

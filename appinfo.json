@@ -25,6 +25,12 @@
     "ac_B": 9
   },
   "resources": {
-    "media": []
+    "media": [
+      {
+        "type": "font",
+        "name": "FONTAWESOME_18",
+        "file": "fonts/fontawesome.ttf"
+      }
+    ]
   }
 }
