@@ -16,6 +16,8 @@
 #define conditions_key 13
 #define temp_key 14
 #define weather_interval_key 15
+#define display_interval_key 15
+
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
@@ -30,11 +32,13 @@ static GFont fontawesome;
 //Battery State Holder
 static int battery_level;
 static bool charging;
+//Bluetooth State
+static bool bt_conn = false;
 //Weather Holder
-static int weather_interval = 1; //in minutes
+static int weather_interval = 15; //in minutes
 static int display_interval = 5; //in seconds
-static char temp[4];
-static char conditions[1];
+static char temp[8];
+static char conditions[8];
 //Time references
 char *onesMap[13] = {"", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"};
 char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "forty", "fifty"};
@@ -69,6 +73,27 @@ static void battery_handler(BatteryChargeState state){
   charging = state.is_charging;
   layer_mark_dirty(graph_layer);
   update_battery_pct();
+}
+static void update_weather(){
+  static char conditions_buffer[8] = "";
+  static char temp_buffer[8] = "";
+  if(bt_conn == true){
+    snprintf(conditions_buffer, sizeof(conditions_buffer), conditions);
+    snprintf(temp_buffer, sizeof(temp_buffer), temp);
+  }
+  else{
+    snprintf(conditions_buffer, sizeof(conditions_buffer), "");
+    snprintf(temp_buffer, sizeof(temp_buffer), "NO BT");
+  }
+  text_layer_set_text(conditions_layer, conditions_buffer);
+  text_layer_set_text(temp_layer, temp_buffer);
+}
+static void bluetooth_callback(bool connected) {
+  bt_conn = connected;
+  if(!connected) {
+    vibes_double_pulse();
+  }
+  update_weather();
 }
 static void calendar_box(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -262,7 +287,7 @@ static void main_window_load(Window *window) {
   text_layer_set_text(batt_layer, "XX %");
   //weather conditions
   conditions_layer = text_layer_create(
-    GRect(batterypctx, batterypcty-5, 40, 20)
+    GRect(batterypctx, batterypcty-5, 40, 30)
   );
   text_layer_set_background_color(conditions_layer, GColorClear);
   text_layer_set_text_color(conditions_layer, txt_color);
@@ -313,6 +338,7 @@ static void main_window_load(Window *window) {
   layer_add_child(window_get_root_layer(window), cal_layer);
   layer_add_child(window_get_root_layer(window), graph_layer);
   update_time();
+  bluetooth_callback(connection_service_peek_pebble_app_connection());
 }
 static void main_window_unload(Window *window){
   text_layer_destroy(hour_layer);
@@ -394,16 +420,6 @@ static void setupTheme(DictionaryIterator *iter){
   }
   else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
 }
-static void update_weather(){
-  //Set conditions text
-  static char conditions_buffer[6] = "";
-  snprintf(conditions_buffer, sizeof(conditions_buffer), "");
-  text_layer_set_text(conditions_layer, conditions_buffer);
-  //Set temp text
-  static char temp_buffer[4] = "";
-  snprintf(temp_buffer, sizeof(temp_buffer), temp);
-  text_layer_set_text(temp_layer, temp_buffer);
-}
 static void setWeather(DictionaryIterator *iter){
   //Fetch weather values
   Tuple *cond_tuple = dict_find(iter, conditions_key);
@@ -455,6 +471,10 @@ static void init(){
   //Run initial updates
   update_time();
   battery_handler(battery_state_service_peek());
+  //Read bluetooth state
+  connection_service_subscribe((ConnectionHandlers) {
+    .pebble_app_connection_handler = bluetooth_callback
+  });
   //Read from config
   app_message_register_inbox_received(inbox_received_handler);
   app_message_register_inbox_dropped(inbox_dropped_callback);
