@@ -18,36 +18,47 @@
   #theme-box .item-button{
     margin-bottom: 25px;
   }
+  .u{
+    text-decoration: underline;
+  }
   </style>
   </head>
 
   <body>
-    <h1 class='title'>Elegant Text Configuration<br><br>Watchface Created by Jordan Poles using Slate</h1>
+    <h1 class='title'><span class="u">Elegant Text</span> Configuration<br><br>Watchface Created by <span class="u">Jordan Poles</span> using <span class="u">Slate</span></h1>
 
     <div class='item-container'>
-      <div class='item-container-content'>
-        <div class='item'>
-          Use this configuration page to choose the colors you would like applied to this watchface.
-        </div>
-      </div>
-    </div>
-    <div class='item-container'>
-      <div class='item-container-header'>Bluetooth Connection:</div>
-      <div class='item-container-content'>
-        <div class='item'>
-          The following options will notify you when your bluetooth is disconnected.
-        </div>
-      </div>
-      <br>
+      <div class='item-container-header'>On Bluetooth Disconnect:</div>
       <div class='item-container-content'>
         <label class='item'>
           Vibrate
           <input id='blt_vibrate' name='blt_vibrate' type='checkbox' class='item-toggle'>
         </label>
-        <label class='item'>
-          Indicator
-          <input id='blt_indicator' name='blt_vibrate' type='checkbox' class='item-toggle'>
-        </label>
+      </div>
+    </div>
+    <div class='item-container'>
+      <div class='item-container-header'>United States Weather Settings (By Accuweather):<br></div>
+      <div class='item-container-content' style="font-size: .8em; padding: 5px 5px 15px 5px;">
+        US ZIP Code:
+        <div class="item-input-wrapper">
+          <input id='zipcode' name='zipcode' type='text' class='item-input' value="77005">
+        </div>
+        Weather Refresh Rate (Minutes; 0 to disable weather):
+        <div class="item-input-wrapper">
+          <input id='weather_refresh_rate' name='weather_refresh_rate' type='text' class='item-input' value="15">
+        </div>
+        Battery/Weather Switch Rate (Seconds; 0 to disable battery %):
+        <div class="item-input-wrapper">
+          <input id='weather_swap_rate' name='weather_swap_rate' type='text' class='item-input' value="5">
+        </div>
+      </div>
+    </div>
+    <div class='item-container'>
+      <div class='item-container-header'>Color Setup:</div>
+      <div class='item-container-content'>
+        <div class='item'>
+          Use this section of the configuration page to choose the colors you would like applied to this watchface.
+        </div>
       </div>
     </div>
     <div class='item-container'>
@@ -125,7 +136,10 @@
       save = 0;
     }
     var bltVibrate = document.getElementById('blt_vibrate');
-    var bltIndicator = document.getElementById('blt_indicator');
+    var zipcode = document.getElementById('zipcode');
+    var weather_refresh_rate = document.getElementById('weather_refresh_rate');
+    var weather_swap_rate = document.getElementById('weather_swap_rate');
+
     var backgroundColorPicker = document.getElementById('background_color');
     var textColorPicker = document.getElementById('text_color');
     var accentColorPicker = document.getElementById('accent_color');
@@ -134,8 +148,10 @@
       'background_color': backgroundColorPicker.value,
       'text_color': textColorPicker.value,
       'accent_color': accentColorPicker.value,
+      'zipcode': zipcode.value,
+      'weather_refresh_rate': weather_refresh_rate.value,
+      'weather_swap_rate': weather_swap_rate.value,
       'blt_vibrate': bltVibrate.checked,
-      'blt_indicator': bltIndicator.checked
     };
     if(save==1){
       // Save for next launch
@@ -188,7 +204,9 @@
   }
   (function() {
     var bltVibrate = document.getElementById('blt_vibrate');
-    var bltIndicator = document.getElementById('blt_indicator');
+    var zipcode = document.getElementById('zipcode');
+    var weather_refresh_rate = document.getElementById('weather_refresh_rate');
+    var weather_swap_rate = document.getElementById('weather_swap_rate');
     var backgroundColorPicker = document.getElementById('background_color');
     var textColorPicker = document.getElementById('text_color');
     var accentColorPicker = document.getElementById('accent_color');
@@ -197,11 +215,12 @@
       'text_color': textColorPicker,
       'accent_color': accentColorPicker,
       'blt_vibrate': bltVibrate,
-      'blt_indicator': bltIndicator
+      'zipcode': zipcode,
+      'weather_refresh_rate': weather_refresh_rate,
+      'weather_swap_rate': weather_swap_rate,
     };
     for(opt in options){
       if(localStorage[opt]) {
-        console.log(typeof localStorage.getItem(opt));
         options[opt].value = localStorage.getItem(opt);
         options[opt].checked = localStorage.getItem(opt) == "true";
         console.log(opt, localStorage.getItem(opt));
