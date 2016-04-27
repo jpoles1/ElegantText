@@ -82,7 +82,7 @@ static void update_weather(){
     snprintf(temp_buffer, sizeof(temp_buffer), temp);
   }
   else{
-    snprintf(conditions_buffer, sizeof(conditions_buffer), "");
+    snprintf(conditions_buffer, sizeof(conditions_buffer), "");
     snprintf(temp_buffer, sizeof(temp_buffer), "NO BT");
   }
   text_layer_set_font(conditions_layer, fontawesome);
@@ -182,23 +182,15 @@ static void update_time() {
   text_layer_set_text(month_layer, month_buffer);
   text_layer_set_text(date_layer, date_buffer);
 }
-static void display_tick_handler(struct tm *tick_time, TimeUnits units_changed){
-  static bool displayMode = -1;
-  if(displayMode == -1){
-    displayMode = 0;
-    layer_set_hidden((Layer *)conditions_layer, true);
-    layer_set_hidden((Layer *)temp_layer, true);
-  }
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
+  static bool displayMode = 0;
   if(tick_time->tm_sec % display_interval == 0) {
     displayMode = 1 - displayMode;
     layer_set_hidden((Layer *)batt_layer, 1 - displayMode);
     layer_set_hidden((Layer *)conditions_layer, displayMode);
     layer_set_hidden((Layer *)temp_layer, displayMode);
   }
-}
-static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
-  update_time();
-  if(tick_time->tm_min % weather_interval == 0) {
+  if(tick_time->tm_sec == 0 && tick_time->tm_min % weather_interval == 0) {
     // Begin dictionary
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
@@ -207,6 +199,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
     // Send the message!
     app_message_outbox_send();
   }
+  update_time();
 }
 //Load and Unload Window (create and setup resources)
 static void main_window_load(Window *window) {
@@ -298,6 +291,9 @@ static void main_window_load(Window *window) {
   );
   text_layer_set_background_color(temp_layer, GColorClear);
   text_layer_set_text_color(temp_layer, txt_color);
+  //hide temp to start with
+  layer_set_hidden((Layer *)conditions_layer, true);
+  layer_set_hidden((Layer *)temp_layer, true);
   //Setup Fonts
   text_layer_set_font(hour_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_font(tens_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
@@ -464,8 +460,7 @@ static void init(){
     .load = main_window_load,
     .unload = main_window_unload
   });
-  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
-  tick_timer_service_subscribe(SECOND_UNIT, display_tick_handler);
+  tick_timer_service_subscribe(SECOND_UNIT, &tick_handler);
   battery_state_service_subscribe(battery_handler);
   //Push window
   window_stack_push(main_window, true);
