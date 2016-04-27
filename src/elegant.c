@@ -10,10 +10,17 @@
 #define ac_R 7
 #define ac_G 8
 #define ac_B 9
+#define blt_vibrate_key 10
+#define blt_indicator_key 11
+#define msg_type_key 12
+#define conditions_key 13
+#define temp_key 14
+
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
 static TextLayer *batt_layer;
+static TextLayer *conditions_layer, *temp_layer;
 static Layer *graph_layer;
 static Layer *cal_layer;
 static GColor bg_color;
@@ -23,6 +30,9 @@ static GFont fontawesome;
 //Battery State Holder
 static int battery_level;
 static bool charging;
+//Weather Holder
+static char temp[4];
+static char conditions[1];
 //Time references
 char *onesMap[13] = {"", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"};
 char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "forty", "fifty"};
@@ -48,7 +58,7 @@ static void update_battery(Layer *layer, GContext *ctx) {
 static void update_battery_pct(){
   static char batt_buffer[4] = "";
   //snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
-  snprintf(batt_buffer, sizeof(batt_buffer), "");
+  snprintf(batt_buffer, sizeof(batt_buffer), conditions);
   //text_layer_set_text_color(batt_layer, battery_level < 30 ? ac_color:txt_color);
   text_layer_set_text(batt_layer, batt_buffer);
 }
@@ -271,8 +281,8 @@ static void main_window_unload(Window *window){
   text_layer_destroy(batt_layer);
   layer_destroy(graph_layer);
 }
-//Get Config
-static void inbox_received_handler(DictionaryIterator *iter, void *context) {
+//Get/Set Config
+static void setupTheme(DictionaryIterator *iter){
   // Color scheme?
   persist_write_int(color_set, 1);
   Tuple *bg_r_t = dict_find(iter, bg_R);
@@ -338,6 +348,20 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     text_layer_set_text_color(hour_layer, ac_color);
   }
   else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
+}
+static void setWeather(DictionaryIterator *iter){
+  Tuple *cond_tuple = dict_find(iter, conditions_key);
+  memcpy(conditions, cond_tuple->value->cstring, cond_tuple->length);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", conditions);
+}
+static void inbox_received_handler(DictionaryIterator *iter, void *context) {
+  int msg_type = dict_find(iter, msg_type_key)->value->int32;
+  if(msg_type == 0){
+    setupTheme(iter);
+  }
+  else if(msg_type == 1){
+    setWeather(iter);
+  }
   layer_mark_dirty(cal_layer);
   layer_mark_dirty(graph_layer);
   update_battery_pct();

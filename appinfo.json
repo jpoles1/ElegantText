@@ -23,8 +23,11 @@
     "ac_R": 7,
     "ac_G": 8,
     "ac_B": 9,
-    "blt_vibrate": 1,
-    "blt_indicator": 0
+    "blt_vibrate": 10,
+    "blt_indicator": 11,
+    "msg_type": 12,
+    "conditions": 13,
+    "temp": 14
   },
   "resources": {
     "media": [
