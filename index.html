@@ -148,20 +148,42 @@
       'background_color': backgroundColorPicker.value,
       'text_color': textColorPicker.value,
       'accent_color': accentColorPicker.value,
-      'zipcode': zipcode.value,
-      'weather_refresh_rate': weather_refresh_rate.value,
-      'weather_swap_rate': weather_swap_rate.value,
+      'weather_refresh_rate': parseInt(weather_refresh_rate.value),
+      'weather_swap_rate': parseInt(weather_swap_rate.value),
       'blt_vibrate': bltVibrate.checked,
     };
-    if(save==1){
-      // Save for next launch
-      localStorage.clear();
-      for(opt in options){
-        localStorage.setItem(opt, options[opt])
-      }
+    //INPUT VALIDATION
+    var valid_zipcode = true;
+    var zipcode_pattern = /^\d{5}$/
+    if(options["weather_refresh_rate"] > 0){
+      options['zipcode']= zipcode.value;
+      valid_zipcode = zipcode_pattern.test(options["zipcode"]);
     }
-    console.log('Got options: ' + JSON.stringify(options));
-    return options;
+    if(options["weather_swap_rate"] == 0 && options["weather_refresh_rate"]==0){
+      alert("The weather and swap rates cannot both be set to 0");
+    }
+    else if(!(options["weather_refresh_rate"]>=0)){
+      alert("Please enter a valid refresh rate (a # greater than or equal to 0)")
+    }
+    else if(!(options["weather_swap_rate"]>=0)){
+      alert("Please enter a valid swap rate (a # greater than or equal to 0)")
+    }
+    else if(!valid_zipcode){
+      alert("Invalid zipcode, please try again")
+    }
+    else{
+      console.log('Got options: ' + JSON.stringify(options));
+      if(save==1){
+        // Save for next launch
+        console.log('Saved these options to web storage');
+        localStorage.clear();
+        for(opt in options){
+          localStorage.setItem(opt, options[opt])
+        }
+      }
+      return options
+    }
+    return false;
   }
 
   function getQueryParam(variable, defaultValue) {
@@ -179,10 +201,12 @@
   var submitButton = document.getElementById('submit_button');
   submitButton.addEventListener('click', function() {
     console.log('Submit');
-
-    // Set the return URL depending on the runtime environment
-    var return_to = getQueryParam('return_to', 'pebblejs://close#');
-    document.location = return_to + encodeURIComponent(JSON.stringify(getConfigData(1)));
+    watchface_config = getConfigData(1);
+    if(watchface_config!=false){
+      // Set the return URL depending on the runtime environment
+      var return_to = getQueryParam('return_to', 'pebblejs://close#');
+      document.location = return_to + encodeURIComponent(JSON.stringify(watchface_config));
+    }
   });
   function set_theme(name){
     var theme = {"default": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#FFAA00'}, "cyborg": {"bg": '#550055', "txt": '#FFFFFF', "ac": '#55FF00'}, "aqua": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#AAAAFF'}, "burnt": {"bg": '#FFAA00', "txt": '#000000', "ac": '#000000'}}
