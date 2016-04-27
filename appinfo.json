@@ -3,7 +3,7 @@
   "shortName": "ElegText",
   "longName": "Elegant Text",
   "companyName": "jpoles1",
-  "versionLabel": "2",
+  "versionLabel": "3",
   "sdkVersion": "3",
   "targetPlatforms": ["basalt"],
   "watchapp": {
@@ -35,6 +35,11 @@
         "type": "font",
         "name": "FONTAWESOME_18",
         "file": "fonts/fontawesome.ttf"
+      },
+      {
+        "type": "font",
+        "name": "ICONS_24",
+        "file": "fonts/icomoon.ttf"
       }
     ]
   }

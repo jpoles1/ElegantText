@@ -10,28 +10,29 @@ var xhrRequest = function (url, type, callback) {
   xhr.send();
 };
 function parseCondition(cond){
+  console.log("Condtions: ", cond)
   if(["Sunny", "Mostly Sunny", "Partly Sunny", "Intermittent Clouds", "Hazy Sunshine", "Hot"].indexOf(cond) > -1){
-    sun = "";
+    sun = "";
     return sun;
   }
   if(["Mostly Cloudy", "Cloudy", "Dreary (Overcast)", "Fog"].indexOf(cond) > -1){
-    cloud = "";
+    cloud = "";
     return cloud;
   }
-  if(["Showers", "Mostly Cloudy w/ Showers", "Partly Sunny w/ Showers", "T-Storms", "Mostly Cloudy w/ T-Storms", "Partly Sunny w/ T-Storms", "Rain", "Partly Cloudy w/ Showers", "Partly Cloudy w/ T-Storms"].indexOf(cond) > -1){
-    rain = "";
+  if(["Showers", "Mostly Cloudy w/ Showers", "Thunderstorms", "Partly Sunny w/ Showers", "T-Storms", "Mostly Cloudy w/ T-Storms", "Partly Sunny w/ T-Storms", "Rain", "Partly Cloudy w/ Showers", "Partly Cloudy w/ T-Storms"].indexOf(cond) > -1){
+    rain = "";
     return rain;
   }
   if(["Windy"].indexOf(cond) > -1){
-    wind = "";
+    wind = "";
     return wind;
   }
   if(["Flurries", "Mostly Cloudy w/ Flurries", "Partly Sunny w/ Flurries", "Snow", "Mostly Cloudy w/ Snow", "Ice", "Sleet", "Freezing Rain", "Rain and Snow", "Cold"].indexOf(cond) > -1){
-    snow = "";
+    snow = "";
     return snow;
   }
   if(["Clear", "Mostly Clear", "Partly Cloudy", "Hazy Moonlight"].indexOf(cond) > -1){
-    night = "";
+    night = "";
     return night;
   }
 }

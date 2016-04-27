@@ -35,7 +35,7 @@ static bool charging;
 //Bluetooth State
 static bool bt_conn = false;
 //Weather Holder
-static int weather_interval = 15; //in minutes
+static int weather_interval = 2; //in minutes
 static int display_interval = 5; //in seconds
 static char temp[8];
 static char conditions[8];
@@ -85,6 +85,7 @@ static void update_weather(){
     snprintf(conditions_buffer, sizeof(conditions_buffer), "");
     snprintf(temp_buffer, sizeof(temp_buffer), "NO BT");
   }
+  text_layer_set_font(conditions_layer, fontawesome);
   text_layer_set_text(conditions_layer, conditions_buffer);
   text_layer_set_text(temp_layer, temp_buffer);
 }
@@ -185,8 +186,8 @@ static void display_tick_handler(struct tm *tick_time, TimeUnits units_changed){
   static bool displayMode = -1;
   if(displayMode == -1){
     displayMode = 0;
-    layer_set_hidden((Layer *)conditions_layer, displayMode);
-    layer_set_hidden((Layer *)temp_layer, displayMode);
+    layer_set_hidden((Layer *)conditions_layer, true);
+    layer_set_hidden((Layer *)temp_layer, true);
   }
   if(tick_time->tm_sec % display_interval == 0) {
     displayMode = 1 - displayMode;
@@ -457,7 +458,7 @@ static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
 }
 //Init & Deinit
 static void init(){
-  fontawesome = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONTAWESOME_18));
+  fontawesome = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_ICONS_24));
   main_window = window_create();
   window_set_window_handlers(main_window, (WindowHandlers) {
     .load = main_window_load,
@@ -480,7 +481,8 @@ static void init(){
   app_message_register_inbox_dropped(inbox_dropped_callback);
   app_message_register_outbox_failed(outbox_failed_callback);
   app_message_register_outbox_sent(outbox_sent_callback);
-  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  //app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  app_message_open(128, 128);
 }
 static void deinit(){
   window_destroy(main_window);
