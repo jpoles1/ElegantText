@@ -15,7 +15,7 @@
 #define msg_type_key 12
 #define conditions_key 13
 #define temp_key 14
-
+#define weather_interval_key 15
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
 static TextLayer *weekday_layer, *date_layer, *month_layer;
@@ -31,6 +31,8 @@ static GFont fontawesome;
 static int battery_level;
 static bool charging;
 //Weather Holder
+static int weather_interval = 1; //in minutes
+static int display_interval = 5; //in seconds
 static char temp[4];
 static char conditions[1];
 //Time references
@@ -57,9 +59,9 @@ static void update_battery(Layer *layer, GContext *ctx) {
 }
 static void update_battery_pct(){
   static char batt_buffer[4] = "";
-  //snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
-  snprintf(batt_buffer, sizeof(batt_buffer), conditions);
-  //text_layer_set_text_color(batt_layer, battery_level < 30 ? ac_color:txt_color);
+  snprintf(batt_buffer, sizeof(batt_buffer), battery_level == 100 ? "100":"%i%%", battery_level);
+  //snprintf(batt_buffer, sizeof(batt_buffer), conditions);
+  text_layer_set_text_color(batt_layer, battery_level < 30 ? ac_color:txt_color);
   text_layer_set_text(batt_layer, batt_buffer);
 }
 static void battery_handler(BatteryChargeState state){
@@ -154,8 +156,31 @@ static void update_time() {
   text_layer_set_text(month_layer, month_buffer);
   text_layer_set_text(date_layer, date_buffer);
 }
+static void display_tick_handler(struct tm *tick_time, TimeUnits units_changed){
+  static bool displayMode = -1;
+  if(displayMode == -1){
+    displayMode = 0;
+    layer_set_hidden((Layer *)conditions_layer, displayMode);
+    layer_set_hidden((Layer *)temp_layer, displayMode);
+  }
+  if(tick_time->tm_sec % display_interval == 0) {
+    displayMode = 1 - displayMode;
+    layer_set_hidden((Layer *)batt_layer, 1 - displayMode);
+    layer_set_hidden((Layer *)conditions_layer, displayMode);
+    layer_set_hidden((Layer *)temp_layer, displayMode);
+  }
+}
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
   update_time();
+  if(tick_time->tm_min % weather_interval == 0) {
+    // Begin dictionary
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+    // Add a key-value pair
+    dict_write_uint8(iter, 0, 0);
+    // Send the message!
+    app_message_outbox_send();
+  }
 }
 //Load and Unload Window (create and setup resources)
 static void main_window_load(Window *window) {
@@ -235,6 +260,18 @@ static void main_window_load(Window *window) {
   text_layer_set_background_color(batt_layer, GColorClear);
   text_layer_set_text_color(batt_layer, txt_color);
   text_layer_set_text(batt_layer, "XX %");
+  //weather conditions
+  conditions_layer = text_layer_create(
+    GRect(batterypctx, batterypcty-5, 40, 20)
+  );
+  text_layer_set_background_color(conditions_layer, GColorClear);
+  text_layer_set_text_color(conditions_layer, txt_color);
+  //temp
+  temp_layer = text_layer_create(
+    GRect(batterypctx, batterypcty+15, 40, 20)
+  );
+  text_layer_set_background_color(temp_layer, GColorClear);
+  text_layer_set_text_color(temp_layer, txt_color);
   //Setup Fonts
   text_layer_set_font(hour_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
   text_layer_set_font(tens_layer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
@@ -242,8 +279,10 @@ static void main_window_load(Window *window) {
   text_layer_set_font(date_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_font(month_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
   text_layer_set_font(weekday_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  //text_layer_set_font(batt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-  text_layer_set_font(batt_layer, fontawesome);
+  text_layer_set_font(batt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_font(conditions_layer, fontawesome);
+  text_layer_set_font(temp_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+
   //Optional text centering
   if(centered){
     text_layer_set_text_alignment(hour_layer, GTextAlignmentCenter);
@@ -252,6 +291,8 @@ static void main_window_load(Window *window) {
     text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(month_layer, GTextAlignmentCenter);
     text_layer_set_text_alignment(batt_layer, GTextAlignmentCenter);
+    text_layer_set_text_alignment(conditions_layer, GTextAlignmentCenter);
+    text_layer_set_text_alignment(temp_layer, GTextAlignmentCenter);
   }
   //Add text layers to Window
   layer_add_child(window_layer, text_layer_get_layer(hour_layer));
@@ -261,6 +302,8 @@ static void main_window_load(Window *window) {
   layer_add_child(window_layer, text_layer_get_layer(date_layer));
   layer_add_child(window_layer, text_layer_get_layer(month_layer));
   layer_add_child(window_layer, text_layer_get_layer(batt_layer));
+  layer_add_child(window_layer, text_layer_get_layer(conditions_layer));
+  layer_add_child(window_layer, text_layer_get_layer(temp_layer));
   //Draw Graphics
   graph_layer = layer_create(GRect(5, batterybary, bounds.size.w-10, 8));
   layer_set_update_proc(graph_layer, update_battery);
@@ -279,6 +322,8 @@ static void main_window_unload(Window *window){
   text_layer_destroy(date_layer);
   text_layer_destroy(month_layer);
   text_layer_destroy(batt_layer);
+  text_layer_destroy(conditions_layer);
+  text_layer_destroy(temp_layer);
   layer_destroy(graph_layer);
 }
 //Get/Set Config
@@ -349,13 +394,28 @@ static void setupTheme(DictionaryIterator *iter){
   }
   else{APP_LOG(APP_LOG_LEVEL_DEBUG, "Cannot fetch accent color");}
 }
+static void update_weather(){
+  //Set conditions text
+  static char conditions_buffer[6] = "";
+  snprintf(conditions_buffer, sizeof(conditions_buffer), "");
+  text_layer_set_text(conditions_layer, conditions_buffer);
+  //Set temp text
+  static char temp_buffer[4] = "";
+  snprintf(temp_buffer, sizeof(temp_buffer), temp);
+  text_layer_set_text(temp_layer, temp_buffer);
+}
 static void setWeather(DictionaryIterator *iter){
+  //Fetch weather values
   Tuple *cond_tuple = dict_find(iter, conditions_key);
   memcpy(conditions, cond_tuple->value->cstring, cond_tuple->length);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "%s", conditions);
+  Tuple *temp_tuple = dict_find(iter, temp_key);
+  memcpy(temp, temp_tuple->value->cstring, temp_tuple->length);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Temp: %s; Conditions: %s", temp, conditions);
+  update_weather();
 }
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   int msg_type = dict_find(iter, msg_type_key)->value->int32;
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "msg type: %d", msg_type);
   if(msg_type == 0){
     setupTheme(iter);
   }
@@ -366,6 +426,18 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   layer_mark_dirty(graph_layer);
   update_battery_pct();
   update_time();
+  update_weather();
+}
+static void inbox_dropped_callback(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
+}
+
+static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
+}
+
+static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
 }
 //Init & Deinit
 static void init(){
@@ -376,6 +448,7 @@ static void init(){
     .unload = main_window_unload
   });
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+  tick_timer_service_subscribe(SECOND_UNIT, display_tick_handler);
   battery_state_service_subscribe(battery_handler);
   //Push window
   window_stack_push(main_window, true);
@@ -384,6 +457,9 @@ static void init(){
   battery_handler(battery_state_service_peek());
   //Read from config
   app_message_register_inbox_received(inbox_received_handler);
+  app_message_register_inbox_dropped(inbox_dropped_callback);
+  app_message_register_outbox_failed(outbox_failed_callback);
+  app_message_register_outbox_sent(outbox_sent_callback);
   app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 static void deinit(){

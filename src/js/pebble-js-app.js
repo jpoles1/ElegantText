@@ -1,5 +1,5 @@
 metric = "0" //Should be 0 or 1; 0 for F, 1 for C
-loc="10546"
+loc="77005"
 url = "http://rss.accuweather.com/rss/liveweather_rss.asp\?metric\="+metric+"\&locCode\="+loc;
 var xhrRequest = function (url, type, callback) {
   var xhr = new XMLHttpRequest();
@@ -58,7 +58,12 @@ Pebble.addEventListener('ready', function() {
   console.log('PebbleKit JS ready!');
   getWeather();
 });
-
+Pebble.addEventListener('appmessage',
+  function(e) {
+    console.log('AppMessage received!');
+    getWeather();
+  }
+);
 Pebble.addEventListener('showConfiguration', function() {
   var url = 'http://jpoles1.github.io/ElegantText/';
   //dev url:
