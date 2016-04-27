@@ -11,12 +11,12 @@
 #define ac_G 8
 #define ac_B 9
 #define blt_vibrate_key 10
-#define blt_indicator_key 11
+#define zipcode_key 11
 #define msg_type_key 12
 #define conditions_key 13
 #define temp_key 14
-#define weather_interval_key 15
-#define display_interval_key 15
+#define weather_refresh_rate_key 15
+#define weather_swap_rate_key 16
 
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
@@ -34,11 +34,13 @@ static int battery_level;
 static bool charging;
 //Bluetooth State
 static bool bt_conn = false;
+static bool blt_vibrate = true;
 //Weather Holder
-static int weather_interval = 2; //in minutes
-static int display_interval = 5; //in seconds
-static char temp[8];
-static char conditions[8];
+static int weather_refresh_rate = 15; //in minutes
+static int weather_swap_rate = 5; //in seconds
+static char zipcode[10] = "77005";
+static char temp[8] = "Chking";
+static char conditions[8] = "";
 //Time references
 char *onesMap[13] = {"", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"};
 char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "forty", "fifty"};
@@ -74,6 +76,16 @@ static void battery_handler(BatteryChargeState state){
   layer_mark_dirty(graph_layer);
   update_battery_pct();
 }
+static void request_weather(){
+  // Begin dictionary
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+  // Add a key-value pair
+  dict_write_cstring(iter, 0, zipcode);
+  // Send the message!
+  app_message_outbox_send();
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Requesting new weather report...");
+}
 static void update_weather(){
   static char conditions_buffer[8] = "";
   static char temp_buffer[8] = "";
@@ -90,11 +102,15 @@ static void update_weather(){
   text_layer_set_text(temp_layer, temp_buffer);
 }
 static void bluetooth_callback(bool connected) {
-  bt_conn = connected;
+  static int last_conn = -1;
   if(!connected) {
     vibes_double_pulse();
   }
-  update_weather();
+  if(last_conn == 0 && connected == 1){
+    request_weather();
+  }
+  last_conn = connected;
+  bt_conn = connected;
 }
 static void calendar_box(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -184,20 +200,14 @@ static void update_time() {
 }
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
   static bool displayMode = 0;
-  if(tick_time->tm_sec % display_interval == 0) {
+  if(tick_time->tm_sec % weather_swap_rate == 0) {
     displayMode = 1 - displayMode;
     layer_set_hidden((Layer *)batt_layer, 1 - displayMode);
     layer_set_hidden((Layer *)conditions_layer, displayMode);
     layer_set_hidden((Layer *)temp_layer, displayMode);
   }
-  if(tick_time->tm_sec == 0 && tick_time->tm_min % weather_interval == 0) {
-    // Begin dictionary
-    DictionaryIterator *iter;
-    app_message_outbox_begin(&iter);
-    // Add a key-value pair
-    dict_write_uint8(iter, 0, 0);
-    // Send the message!
-    app_message_outbox_send();
+  if(tick_time->tm_sec == 0 && tick_time->tm_min % weather_refresh_rate == 0) {
+    request_weather();
   }
   update_time();
 }
@@ -224,6 +234,12 @@ static void main_window_load(Window *window) {
     blue = persist_read_int(ac_B);
     ac_color = GColorFromRGB(red, green, blue);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Got Accent Color - R: %d, G: %d, B: %d", red, green, blue);
+    blt_vibrate = persist_read_int(blt_vibrate_key);
+    weather_refresh_rate = persist_read_int(weather_refresh_rate_key);
+    weather_swap_rate = persist_read_int(weather_swap_rate_key);
+    persist_read_string(zipcode_key, zipcode, 10);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "blt_vibrate: %d", blt_vibrate);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "zipcode: %s; weather_refresh_rate: %d; weather_swap_rate: %d", zipcode, weather_refresh_rate, weather_swap_rate);
   }
   //Set window background
   window_set_background_color(main_window, bg_color);
@@ -426,11 +442,28 @@ static void setWeather(DictionaryIterator *iter){
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Temp: %s; Conditions: %s", temp, conditions);
   update_weather();
 }
+static void setupSettings(DictionaryIterator *iter){
+  //Fetch BT Vibrate Setting
+  blt_vibrate = dict_find(iter, blt_vibrate_key)->value->int32;
+  weather_refresh_rate = dict_find(iter, weather_refresh_rate_key)->value->int32;
+  weather_swap_rate = dict_find(iter, weather_swap_rate_key)->value->int32;
+  Tuple *zipcode_tuple = dict_find(iter, zipcode_key);
+  memcpy(zipcode, zipcode_tuple->value->cstring, zipcode_tuple->length);
+  persist_write_int(blt_vibrate_key, blt_vibrate);
+  persist_write_int(weather_refresh_rate_key, weather_refresh_rate);
+  persist_write_int(weather_swap_rate_key, weather_swap_rate);
+  persist_write_string(zipcode_key, zipcode);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "blt_vibrate: %d", blt_vibrate);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "zipcode: %s; weather_refresh_rate: %d; weather_swap_rate: %d", zipcode, weather_refresh_rate, weather_swap_rate);
+  setupTheme(iter);
+  request_weather();
+}
+
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   int msg_type = dict_find(iter, msg_type_key)->value->int32;
   APP_LOG(APP_LOG_LEVEL_DEBUG, "msg type: %d", msg_type);
   if(msg_type == 0){
-    setupTheme(iter);
+    setupSettings(iter);
   }
   else if(msg_type == 1){
     setWeather(iter);
@@ -439,7 +472,6 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   layer_mark_dirty(graph_layer);
   update_battery_pct();
   update_time();
-  update_weather();
 }
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
   APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
@@ -477,7 +509,7 @@ static void init(){
   app_message_register_outbox_failed(outbox_failed_callback);
   app_message_register_outbox_sent(outbox_sent_callback);
   //app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
-  app_message_open(128, 128);
+  app_message_open(256, 256);
 }
 static void deinit(){
   window_destroy(main_window);
