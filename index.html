@@ -42,11 +42,11 @@
       <div class='item-container-content'>
         <label class='item'>
           Vibrate
-          <input id='blt_vibrate' type='checkbox' class='item-toggle'>
+          <input id='blt_vibrate' name='blt_vibrate' type='checkbox' class='item-toggle'>
         </label>
         <label class='item'>
           Indicator
-          <input id='blt_indicator' type='checkbox' class='item-toggle'>
+          <input id='blt_indicator' name='blt_vibrate' type='checkbox' class='item-toggle'>
         </label>
       </div>
     </div>
@@ -131,8 +131,8 @@
       'background_color': backgroundColorPicker.value,
       'text_color': textColorPicker.value,
       'accent_color': accentColorPicker.value,
-      'blt_vibrate': bltVibrate.value,
-      'blt_indicator': bltIndicator.value
+      'blt_vibrate': bltVibrate.checked,
+      'blt_indicator': bltIndicator.checked
     };
 
     // Save for next launch
@@ -189,15 +189,17 @@
     var accentColorPicker = document.getElementById('accent_color');
 
     var options = {
-      'background_color': backgroundColorPicker,
-      'text_color': textColorPicker,
-      'accent_color': accentColorPicker,
-      'blt_vibrate': bltVibrate,
-      'blt_indicator': bltIndicator
+      'background_color': backgroundColorPicker.value,
+      'text_color': textColorPicker.value,
+      'accent_color': accentColorPicker.value,
+      'blt_vibrate': bltVibrate.checked,
+      'blt_indicator': bltIndicator.checked
     };
+    console.log(options)
     for(opt in options){
       if(localStorage[opt]) {
-        options[opt].value = localStorage[opt];
+        options[opt] = localStorage[opt];
+        console.log(opt, options[opt])
       }
     }
   })();
