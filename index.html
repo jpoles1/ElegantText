@@ -120,7 +120,10 @@
     </div>
   </body>
   <script>
-  function getConfigData() {
+  function getConfigData(save) {
+    if(typeof save === "undefined"){
+      save = 0;
+    }
     var bltVibrate = document.getElementById('blt_vibrate');
     var bltIndicator = document.getElementById('blt_indicator');
     var backgroundColorPicker = document.getElementById('background_color');
@@ -134,10 +137,12 @@
       'blt_vibrate': bltVibrate.checked,
       'blt_indicator': bltIndicator.checked
     };
-
-    // Save for next launch
-    for(opt in options){
-      localStorage['opt'] = options['opt'];
+    if(save==1){
+      // Save for next launch
+      localStorage.clear();
+      for(opt in options){
+        localStorage.setItem(opt, options[opt])
+      }
     }
     console.log('Got options: ' + JSON.stringify(options));
     return options;
@@ -161,7 +166,7 @@
 
     // Set the return URL depending on the runtime environment
     var return_to = getQueryParam('return_to', 'pebblejs://close#');
-    document.location = return_to + encodeURIComponent(JSON.stringify(getConfigData()));
+    document.location = return_to + encodeURIComponent(JSON.stringify(getConfigData(1)));
   });
   function set_theme(name){
     var theme = {"default": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#FFAA00'}, "cyborg": {"bg": '#550055', "txt": '#FFFFFF', "ac": '#55FF00'}, "aqua": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#AAAAFF'}, "burnt": {"bg": '#FFAA00', "txt": '#000000', "ac": '#000000'}}
@@ -187,19 +192,19 @@
     var backgroundColorPicker = document.getElementById('background_color');
     var textColorPicker = document.getElementById('text_color');
     var accentColorPicker = document.getElementById('accent_color');
-
     var options = {
-      'background_color': backgroundColorPicker.value,
-      'text_color': textColorPicker.value,
-      'accent_color': accentColorPicker.value,
-      'blt_vibrate': bltVibrate.checked,
-      'blt_indicator': bltIndicator.checked
+      'background_color': backgroundColorPicker,
+      'text_color': textColorPicker,
+      'accent_color': accentColorPicker,
+      'blt_vibrate': bltVibrate,
+      'blt_indicator': bltIndicator
     };
-    console.log(options)
     for(opt in options){
       if(localStorage[opt]) {
-        options[opt] = localStorage[opt];
-        console.log(opt, options[opt])
+        console.log(typeof localStorage.getItem(opt));
+        options[opt].value = localStorage.getItem(opt);
+        options[opt].checked = localStorage.getItem(opt) == "true";
+        console.log(opt, localStorage.getItem(opt));
       }
     }
   })();
