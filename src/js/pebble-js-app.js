@@ -1,4 +1,10 @@
-metric = "0" //Should be 0 or 1; 0 for F, 1 for C
+var sun = "";
+var cloud = "";
+var rain = "";
+var wind = "";
+var snow = "";
+var night = "";
+var metric = "0" //Should be 0 or 1; 0 for F, 1 for C
 if(localStorage.getItem("zipcode")){
   zipcode = localStorage.getItem("zipcode");
   console.log("Got zipcode from storage")
@@ -8,7 +14,6 @@ else{
   zipcode = "77005";
   console.log("Using default zip code", zipcode)
 }
-url = "http://rss.accuweather.com/rss/liveweather_rss.asp\?metric\="+metric+"\&locCode\="+zipcode;
 var xhrRequest = function (url, type, callback) {
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
@@ -18,12 +23,6 @@ var xhrRequest = function (url, type, callback) {
   xhr.send();
 };
 function parseCondition(cond){
-  var sun = "";
-  var cloud = "";
-  var rain = "";
-  var wind = "";
-  var snow = "";
-  var night = "";
   console.log("Condtions: ", cond)
   if(["Sunny", "Mostly Sunny", "Partly Sunny", "Intermittent Clouds", "Hazy Sunshine", "Hot"].indexOf(cond) > -1){
     return sun;
@@ -46,16 +45,26 @@ function parseCondition(cond){
   return " ";
 }
 function getWeather() {
+  var url = "http://rss.accuweather.com/rss/liveweather_rss.asp\?metric\="+metric+"\&locCode\="+zipcode;
+  var dict = {};
+  console.log("Fetching weather using URL:")
+  console.log(url)
   xhrRequest(url, 'GET',
     function(resp) {
       //USE REGEX TO PULL OUT THE IMPORTANT STUFF
       var current_re = /<title>Currently: ([\w\s]+): (\d{1,3}[FC])<\/title>/
-      var weather = resp.match(current_re)
-      var dict = {};
-      dict['msg_type'] = 1;
-      dict['conditions'] = parseCondition(weather[1]);
-      dict['temp'] = weather[2];
-      // Send to watchapp
+      if(current_re.test(resp)){
+        var weather = resp.match(current_re)
+        dict['msg_type'] = 1;
+        dict['conditions'] = parseCondition(weather[1]);
+        dict['temp'] = weather[2];
+        // Send to watchapp
+      }
+      else{
+        dict['msg_type'] = 1;
+        dict['conditions'] = rain;
+        dict['temp'] = "Err";
+      }
       Pebble.sendAppMessage(dict, function() {
         console.log('Send successful: ' + JSON.stringify(dict));
       }, function() {
@@ -104,6 +113,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
   dict['blt_vibrate'] = configData['blt_vibrate'];
   if(configData['zipcode']){
     dict['zipcode'] = configData['zipcode'];
+    zipcode = configData['zipcode'];
   }
   else{
     dict['zipcode'] = "00000";
