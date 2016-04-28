@@ -77,14 +77,16 @@ static void battery_handler(BatteryChargeState state){
   update_battery_pct();
 }
 static void request_weather(){
-  // Begin dictionary
-  DictionaryIterator *iter;
-  app_message_outbox_begin(&iter);
-  // Add a key-value pair
-  dict_write_cstring(iter, 0, zipcode);
-  // Send the message!
-  app_message_outbox_send();
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Requesting new weather report...");
+  if(weather_refresh_rate!=0){
+    // Begin dictionary
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+    // Add a key-value pair
+    dict_write_cstring(iter, 0, zipcode);
+    // Send the message!
+    app_message_outbox_send();
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Requesting new weather report...");
+  }
 }
 static void update_weather(){
   static char conditions_buffer[8] = "";
@@ -200,6 +202,12 @@ static void update_time() {
 }
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
   static bool displayMode = 0;
+  if(weather_swap_rate==0){
+    displayMode = 1;
+  }
+  else if(weather_refresh_rate ==0){
+    displayMode = 0;
+  }
   if(tick_time->tm_sec % weather_swap_rate == 0) {
     displayMode = 1 - displayMode;
     layer_set_hidden((Layer *)batt_layer, 1 - displayMode);

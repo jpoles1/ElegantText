@@ -23,7 +23,7 @@ function parseCondition(cond){
   var rain = "";
   var wind = "";
   var snow = "";
-  var night = "";
+  var night = "";
   console.log("Condtions: ", cond)
   if(["Sunny", "Mostly Sunny", "Partly Sunny", "Intermittent Clouds", "Hazy Sunshine", "Hot"].indexOf(cond) > -1){
     return sun;
@@ -69,13 +69,14 @@ Pebble.addEventListener('ready', function() {
   getWeather();
 });
 Pebble.addEventListener('appmessage', function(e) {
-  console.log("Got request for weather update!", e);
+  console.log("Got request for weather update!");
+  console.log(e)
   getWeather();
 });
 Pebble.addEventListener('showConfiguration', function() {
-  //var url = 'http://jpoles1.github.io/ElegantText/';
+  var url = 'http://jpoles1.github.io/ElegantText/';
   //dev url:
-  var url = "http://192.168.1.150:8080/"
+  //var url = "http://192.168.1.150:8080/"
   console.log('Showing configuration page: ' + url);
 
   Pebble.openURL(url);
