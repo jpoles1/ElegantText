@@ -50,9 +50,16 @@ int houry = 0;
 int tensy = 30;
 int onesy = 60;
 int batterybary = 102;
-int batterypctx = 96;
+#if defined(PBL_PLATFORM_CHALK)
+  int batterypctx = 112;
+  int datex = 66;
+  int weekdayx = 26;
+#else
+  int batterypctx = 96;
+  int datex = 50;
+  int weekdayx = 10;
+#endif
 int batterypcty = 123;
-int datex = 50;
 int datey = 122;
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
@@ -277,7 +284,7 @@ static void main_window_load(Window *window) {
   text_layer_set_text(ones_layer, "ones");
   //Day of Week
   weekday_layer = text_layer_create(
-    GRect(10, batterypcty, 40, 40)
+    GRect(weekdayx, batterypcty, 40, 40)
   );
   text_layer_set_background_color(weekday_layer, GColorClear);
   text_layer_set_text_color(weekday_layer, txt_color);

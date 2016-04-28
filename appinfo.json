@@ -5,7 +5,7 @@
   "companyName": "jpoles1",
   "versionLabel": "3",
   "sdkVersion": "3",
-  "targetPlatforms": ["basalt"],
+  "targetPlatforms": ["aplite", "basalt", "chalk"],
   "watchapp": {
     "watchface": true
   },
