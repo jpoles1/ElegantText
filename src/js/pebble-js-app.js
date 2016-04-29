@@ -79,7 +79,7 @@ Pebble.addEventListener('ready', function() {
 });
 Pebble.addEventListener('appmessage', function(e) {
   console.log("Got request for weather update!");
-  console.log(e)
+  console.dir(e.payload)
   getWeather();
 });
 Pebble.addEventListener('showConfiguration', function() {
@@ -114,6 +114,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
   if(configData['zipcode']){
     dict['zipcode'] = configData['zipcode'];
     zipcode = configData['zipcode'];
+    localStorage.setItem('zipcode', zipcode);
   }
   else{
     dict['zipcode'] = "00000";
