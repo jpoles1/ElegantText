@@ -3,7 +3,7 @@
   "shortName": "ElegText",
   "longName": "Elegant Text",
   "companyName": "jpoles1",
-  "versionLabel": "3",
+  "versionLabel": "4",
   "sdkVersion": "3",
   "targetPlatforms": ["aplite", "basalt", "chalk"],
   "watchapp": {

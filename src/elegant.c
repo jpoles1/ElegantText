@@ -230,7 +230,8 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
 static void main_window_load(Window *window) {
   bg_color = GColorBlack;
   txt_color = GColorWhite;
-  ac_color = GColorChromeYellow;
+  //ac_color = GColorChromeYellow;
+  ac_color = GColorCyan;
   int persist_set = persist_read_int(color_set);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Persist? - %d", persist_set);
   if(persist_set!=0){
