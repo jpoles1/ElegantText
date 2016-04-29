@@ -67,10 +67,10 @@
       <div class='item-container-content'>
         <div class='item-container'>
           <div class='button-container' id="theme-box">
-            <input type='button' class='item-button' value='Default' onclick="set_theme('default')">
+            <input type='button' class='item-button' value='Classic' onclick="set_theme('classic')">
             <input type='button' class='item-button' value='Cyborg' onclick="set_theme('cyborg')">
             <input type='button' class='item-button' value='Burnt' onclick="set_theme('burnt')">
-            <input type='button' class='item-button' value='Aqua' onclick="set_theme('aqua')">
+            <input type='button' class='item-button' value='Aqua (Default)' onclick="set_theme('aqua')">
           </div>
         </div>
       </div>
@@ -210,7 +210,7 @@
     }
   });
   function set_theme(name){
-    var theme = {"default": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#FFAA00'}, "cyborg": {"bg": '#550055', "txt": '#FFFFFF', "ac": '#55FF00'}, "aqua": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#AAFFFF'}, "burnt": {"bg": '#FFAA00', "txt": '#000000', "ac": '#000000'}}
+    var theme = {"classic": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#FFAA00'}, "cyborg": {"bg": '#550055', "txt": '#FFFFFF', "ac": '#55FF00'}, "aqua": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#00FFFF'}, "burnt": {"bg": '#FFAA00', "txt": '#000000', "ac": '#000000'}}
     console.log(name, theme[name])
     var backgroundColorPicker = document.getElementById('background_color');
     var textColorPicker = document.getElementById('text_color');
