@@ -79,7 +79,10 @@ Pebble.addEventListener('ready', function() {
 });
 Pebble.addEventListener('appmessage', function(e) {
   console.log("Got request for weather update!");
-  console.dir(e.payload)
+  if(e.payload[0]){
+    zipcode = e.payload[0];
+    localStorage.setItem('zipcode', zipcode);
+  }
   getWeather();
 });
 Pebble.addEventListener('showConfiguration', function() {
@@ -94,23 +97,27 @@ Pebble.addEventListener('showConfiguration', function() {
 Pebble.addEventListener('webviewclosed', function(e) {
   var configData = JSON.parse(decodeURIComponent(e.response));
   console.log('Configuration page returned: ' + JSON.stringify(configData));
-
   var backgroundColor = configData['background_color'];
   var textColor = configData['text_color'];
   var accentColor = configData['accent_color'];
-
   var dict = {};
+  console.log(accentColor)
   dict['msg_type'] = 0;
-  dict['bg_R'] = parseInt(backgroundColor.substring(2, 4), 16);
-  dict['bg_G'] = parseInt(backgroundColor.substring(4, 6), 16);
-  dict['bg_B'] = parseInt(backgroundColor.substring(6), 16);
-  dict['txt_R'] = parseInt(textColor.substring(2, 4), 16);
-  dict['txt_G'] = parseInt(textColor.substring(4, 6), 16);
-  dict['txt_B'] = parseInt(textColor.substring(6), 16);
-  dict['ac_R'] = parseInt(accentColor.substring(2, 4), 16);
-  dict['ac_G'] = parseInt(accentColor.substring(4, 6), 16);
-  dict['ac_B'] = parseInt(accentColor.substring(6), 16);
+  dict['bg_R'] = parseInt(backgroundColor.substring(1, 3), 16);
+  dict['bg_G'] = parseInt(backgroundColor.substring(3, 5), 16);
+  dict['bg_B'] = parseInt(backgroundColor.substring(5, 7), 16);
+  dict['txt_R'] = parseInt(textColor.substring(1, 3), 16);
+  dict['txt_G'] = parseInt(textColor.substring(3, 5), 16);
+  dict['txt_B'] = parseInt(textColor.substring(5, 7), 16);
+  dict['ac_R'] = parseInt(accentColor.substring(1, 3), 16);
+  dict['ac_G'] = parseInt(accentColor.substring(3, 5), 16);
+  dict['ac_B'] = parseInt(accentColor.substring(5, 7), 16);
   dict['blt_vibrate'] = configData['blt_vibrate'];
+  console.log("TXT:"+textColor)
+  console.log("AC:"+accentColor)
+  console.log("BG:"+backgroundColor)
+  console.log(textColor.substring(6, 8));
+  console.log(JSON.stringify(dict))
   if(configData['zipcode']){
     dict['zipcode'] = configData['zipcode'];
     zipcode = configData['zipcode'];
