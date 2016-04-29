@@ -140,19 +140,21 @@
     var zipcode = document.getElementById('zipcode');
     var weather_refresh_rate = document.getElementById('weather_refresh_rate');
     var weather_swap_rate = document.getElementById('weather_swap_rate');
-
     var backgroundColorPicker = document.getElementById('background_color');
     var textColorPicker = document.getElementById('text_color');
     var accentColorPicker = document.getElementById('accent_color');
-
     var options = {
       'background_color': backgroundColorPicker.value,
       'text_color': textColorPicker.value,
       'accent_color': accentColorPicker.value,
-      'weather_refresh_rate': parseInt(weather_refresh_rate.value),
-      'weather_swap_rate': parseInt(weather_swap_rate.value),
-      'blt_vibrate': bltVibrate.checked,
     };
+    var col_pattern = /^0x/
+    for(val in options){
+      options[val] = options[val].replace(col_pattern, "#")
+    }
+    options['weather_refresh_rate'] = parseInt(weather_refresh_rate.value);
+    options['weather_swap_rate'] = parseInt(weather_swap_rate.value);
+    options['blt_vibrate'] = bltVibrate.checked;
     //INPUT VALIDATION
     var valid_zipcode = true;
     var zipcode_pattern = /^\d{5}$/
@@ -210,7 +212,7 @@
     }
   });
   function set_theme(name){
-    var theme = {"classic": {"bg": '0x000000', "txt": '0xFFFFFF', "ac": '0xFFAA00'}, "cyborg": {"bg": '0x550055', "txt": '0xFFFFFF', "ac": '0x55FF00'}, "aqua": {"bg": '0x000000', "txt": '0xFFFFFF', "ac": '0x00FFFF'}, "burnt": {"bg": '0xFFAA00', "txt": '0x000000', "ac": '0x000000'}}
+    var theme = {"classic": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#FFAA00'}, "cyborg": {"bg": '#550055', "txt": '#FFFFFF', "ac": '#55FF00'}, "aqua": {"bg": '#000000', "txt": '#FFFFFF', "ac": '#00FFFF'}, "burnt": {"bg": '#FFAA00', "txt": '#000000', "ac": '#000000'}}
     console.log(name, theme[name])
     var backgroundColorPicker = document.getElementById('background_color');
     var textColorPicker = document.getElementById('text_color');
