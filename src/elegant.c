@@ -399,7 +399,7 @@ static void setupTheme(DictionaryIterator *iter){
     persist_write_int(bg_G, green);
     persist_write_int(bg_B, blue);
     // Update colors
-    GColor bg_color = GColorFromRGB(red, green, blue);
+    bg_color = GColorFromRGB(red, green, blue);
     window_set_background_color(main_window, bg_color);
     text_layer_set_text_color(month_layer, bg_color);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Background Color - R: %d, G: %d, B: %d", red, green, blue);
@@ -418,13 +418,15 @@ static void setupTheme(DictionaryIterator *iter){
     persist_write_int(txt_G, green);
     persist_write_int(txt_B, blue);
     // Update colors
-    GColor txt_color = GColorFromRGB(red, green, blue);
+    txt_color = GColorFromRGB(red, green, blue);
     text_layer_set_text_color(tens_layer, txt_color);
     text_layer_set_text_color(ones_layer, txt_color);
     text_layer_set_text_color(weekday_layer, txt_color);
     text_layer_set_background_color(month_layer, txt_color);
     text_layer_set_text_color(date_layer, txt_color);
     text_layer_set_text_color(batt_layer, txt_color);
+    text_layer_set_text_color(conditions_layer, txt_color);
+    text_layer_set_text_color(temp_layer, txt_color);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Set Text Color - R: %d, G: %d, B: %d", red, green, blue);
   }
   else{
