@@ -102,9 +102,9 @@ Pebble.addEventListener('appmessage', function(e) {
   getWeather();
 });
 Pebble.addEventListener('showConfiguration', function() {
-  //var url = 'http://jpoles1.github.io/ElegantText/';
+  var url = 'http://jpoles1.github.io/ElegantText/';
   //dev url:
-  var url = "http://192.168.1.150:8080/"
+  //var url = "http://192.168.1.150:8080/"
   console.log('Showing configuration page: ' + url);
 
   Pebble.openURL(url);
