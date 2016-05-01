@@ -4,15 +4,25 @@ var rain = "";
 var wind = "";
 var snow = "";
 var night = "";
-var metric = "0" //Should be 0 or 1; 0 for F, 1 for C
-if(localStorage.getItem("zipcode")){
-  zipcode = localStorage.getItem("zipcode");
-  console.log("Got zipcode from storage")
-  console.log(zipcode)
+var metric = 0;
+var loc = "";
+if(localStorage.getItem("location")){
+  loc = localStorage.getItem("location");
+  console.log("Got location from storage")
+  console.log(loc)
 }
 else{
-  zipcode = "77005";
-  console.log("Using default zip code", zipcode)
+  loc = "77005";
+  console.log("Using default zip code", loc)
+}
+if(localStorage.getItem("metric")){
+  metric = localStorage.getItem("metric");
+  console.log("Got metric from storage")
+  console.log(metric)
+}
+else{
+  metric = "0";
+  console.log("Using default metric code", metric)
 }
 var xhrRequest = function (url, type, callback) {
   var xhr = new XMLHttpRequest();
@@ -45,7 +55,7 @@ function parseCondition(cond){
   return " ";
 }
 function getWeather() {
-  var url = "http://rss.accuweather.com/rss/liveweather_rss.asp\?metric\="+metric+"\&locCode\="+zipcode;
+  var url = "http://rss.accuweather.com/rss/liveweather_rss.asp\?metric\="+metric+"\&locCode\="+loc;
   var dict = {};
   console.log("Fetching weather using URL:")
   console.log(url)
@@ -79,16 +89,22 @@ Pebble.addEventListener('ready', function() {
 });
 Pebble.addEventListener('appmessage', function(e) {
   console.log("Got request for weather update!");
-  if(e.payload[0]){
-    zipcode = e.payload[0];
-    localStorage.setItem('zipcode', zipcode);
+  console.log(JSON.stringify(e.payload))
+  if(e.payload["0"]){
+    metric = e.payload[0];
+    localStorage.setItem('metric', metric);
+  }
+  if(e.payload["1"]){
+    loc = e.payload[1];
+    console.log("Set location to", loc)
+    localStorage.setItem("location", loc);
   }
   getWeather();
 });
 Pebble.addEventListener('showConfiguration', function() {
-  var url = 'http://jpoles1.github.io/ElegantText/';
+  //var url = 'http://jpoles1.github.io/ElegantText/';
   //dev url:
-  //var url = "http://192.168.1.150:8080/"
+  var url = "http://192.168.1.150:8080/"
   console.log('Showing configuration page: ' + url);
 
   Pebble.openURL(url);
@@ -113,22 +129,22 @@ Pebble.addEventListener('webviewclosed', function(e) {
   dict['ac_G'] = parseInt(accentColor.substring(3, 5), 16);
   dict['ac_B'] = parseInt(accentColor.substring(5, 7), 16);
   dict['blt_vibrate'] = configData['blt_vibrate'];
-  console.log("TXT:"+textColor)
-  console.log("AC:"+accentColor)
-  console.log("BG:"+backgroundColor)
-  console.log(textColor.substring(6, 8));
-  console.log(JSON.stringify(dict))
-  if(configData['zipcode']){
-    dict['zipcode'] = configData['zipcode'];
-    zipcode = configData['zipcode'];
-    localStorage.setItem('zipcode', zipcode);
+  if(configData["location"]){
+    console.log(configData["location"])
+    loc = configData["location"];
+    console.log(loc)
+    dict["location"] = configData["location"];
+    localStorage.setItem("location", loc);
   }
   else{
-    dict['zipcode'] = "00000";
+    dict["location"] = "00000";
   }
+  dict['metric'] = parseInt(configData['metric']);
+  metric = dict['metric'];
+  localStorage.setItem('metric', metric);
   dict['weather_refresh_rate'] = configData['weather_refresh_rate'];
   dict['weather_swap_rate'] = configData['weather_swap_rate'];
-
+  console.log(JSON.stringify(dict))
   // Send to watchapp
   Pebble.sendAppMessage(dict, function() {
     console.log('Send successful: ' + JSON.stringify(dict));

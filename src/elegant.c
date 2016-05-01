@@ -11,12 +11,13 @@
 #define ac_G 8
 #define ac_B 9
 #define blt_vibrate_key 10
-#define zipcode_key 11
+#define location_key 11
 #define msg_type_key 12
 #define conditions_key 13
 #define temp_key 14
 #define weather_refresh_rate_key 15
 #define weather_swap_rate_key 16
+#define metric_key 17
 
 static Window *main_window;
 static TextLayer *hour_layer, *tens_layer, *ones_layer;
@@ -36,9 +37,10 @@ static bool charging;
 static bool bt_conn = false;
 static bool blt_vibrate = true;
 //Weather Holder
+static int metric = 0;
 static int weather_refresh_rate = 15; //in minutes
 static int weather_swap_rate = 5; //in seconds
-static char zipcode[10] = "77005";
+static char location[40] = "77005";
 static char temp[8] = "Chking";
 static char conditions[8] = "";
 //Time references
@@ -89,7 +91,8 @@ static void request_weather(){
     DictionaryIterator *iter;
     app_message_outbox_begin(&iter);
     // Add a key-value pair
-    dict_write_cstring(iter, 0, zipcode);
+    dict_write_int32(iter, 0, metric);
+    dict_write_cstring(iter, 1, location);
     // Send the message!
     app_message_outbox_send();
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Requesting new weather report...");
@@ -253,9 +256,10 @@ static void main_window_load(Window *window) {
     blt_vibrate = persist_read_int(blt_vibrate_key);
     weather_refresh_rate = persist_read_int(weather_refresh_rate_key);
     weather_swap_rate = persist_read_int(weather_swap_rate_key);
-    persist_read_string(zipcode_key, zipcode, 10);
+    metric = persist_read_int(metric_key);
+    persist_read_string(location_key, location, 40);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "blt_vibrate: %d", blt_vibrate);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "zipcode: %s; weather_refresh_rate: %d; weather_swap_rate: %d", zipcode, weather_refresh_rate, weather_swap_rate);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "location: %s; weather_refresh_rate: %d; weather_swap_rate: %d", location, weather_refresh_rate, weather_swap_rate);
   }
   //Set window background
   window_set_background_color(main_window, bg_color);
@@ -465,14 +469,16 @@ static void setupSettings(DictionaryIterator *iter){
   blt_vibrate = dict_find(iter, blt_vibrate_key)->value->int32;
   weather_refresh_rate = dict_find(iter, weather_refresh_rate_key)->value->int32;
   weather_swap_rate = dict_find(iter, weather_swap_rate_key)->value->int32;
-  Tuple *zipcode_tuple = dict_find(iter, zipcode_key);
-  memcpy(zipcode, zipcode_tuple->value->cstring, zipcode_tuple->length);
+  metric = dict_find(iter, metric_key)->value->int32;
+  Tuple *location_tuple = dict_find(iter, location_key);
+  memcpy(location, location_tuple->value->cstring, location_tuple->length);
   persist_write_int(blt_vibrate_key, blt_vibrate);
   persist_write_int(weather_refresh_rate_key, weather_refresh_rate);
   persist_write_int(weather_swap_rate_key, weather_swap_rate);
-  persist_write_string(zipcode_key, zipcode);
+  persist_write_int(metric_key, metric);
+  persist_write_string(location_key, location);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "blt_vibrate: %d", blt_vibrate);
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "zipcode: %s; weather_refresh_rate: %d; weather_swap_rate: %d", zipcode, weather_refresh_rate, weather_swap_rate);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "location: %s; weather_refresh_rate: %d; weather_swap_rate: %d", location, weather_refresh_rate, weather_swap_rate);
   setupTheme(iter);
   request_weather();
 }
