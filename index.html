@@ -37,14 +37,12 @@
       </div>
     </div>
     <div class='item-container'>
-      <div class='item-container-header'>United States Weather Settings (By Accuweather):<br></div>
-      <div class='item-container-footer' style="margin-bottom: 10px;">
-        <i><b>Note:</b> Weather is a new setting. If you notice an error, please report it to <a href="mailto:jpoles1@gmail.com">jpoles1@gmail.com</a>.</i>
-      </div>
+      <div class='item-container-header'>Weather Settings (By Accuweather):</div>
+      <div class='item-container-footer'><i><b>Note:</b> Your location can be in one of several forms (including Potal Code or City Name). Please read <a href="http://apidev.accuweather.com/developers/locations">here</a> for more information.</i></div>
       <div class='item-container-content' style="font-size: .8em; padding: 5px 5px 15px 5px;">
-        US ZIP Code:
+        Location:
         <div class="item-input-wrapper">
-          <input id='zipcode' name='zipcode' type='text' class='item-input' value="77005">
+          <input id='location' name='location' type='text' class='item-input' value="77005">
         </div>
         Weather Refresh Rate (Minutes; 0 to disable weather):
         <div class="item-input-wrapper">
@@ -56,6 +54,19 @@
         </div>
       </div>
     </div>
+    <div class="item-container">
+      <div class="item-container-header"></div>
+      <div class="item-container-content">
+        <label class="item">
+          Temperature Unit
+          <select id="temp-unit" name="temp-unit" class="item-select">
+            <option class="item-select-option" selected>Fahrenheit</option>
+            <option class="item-select-option">Celsius</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class='item-container-header'>To test if you have entered a working location above, check <a id="weather-test-url" href="#" target="_blank">here</a>!</div>
     <div class='item-container'>
       <div class='item-container-header'>Color Setup:</div>
       <div class='item-container-content'>
@@ -131,12 +142,24 @@
     </div>
   </body>
   <script>
+  function updateWeatherURL(){
+    var metric = 0;
+    var tempunit = document.getElementById('temp-unit').value;
+    var location = document.getElementById('location').value;
+    if(tempunit == "Celsius"){metric=1}
+    var api_url = "http://rss.accuweather.com/rss/liveweather_rss.asp\?metric\="+metric+"\&locCode\="+location;
+    document.getElementById("weather-test-url").href = api_url;
+    return metric;
+  }
+  $("#location").change(updateWeatherURL);
+  $("#temp-unit").change(updateWeatherURL);
   function getConfigData(save) {
     if(typeof save === "undefined"){
       save = 0;
     }
     var bltVibrate = document.getElementById('blt_vibrate');
-    var zipcode = document.getElementById('zipcode');
+    var tempunit = document.getElementById('temp-unit').value;
+    var location = document.getElementById('location');
     var weather_refresh_rate = document.getElementById('weather_refresh_rate');
     var weather_swap_rate = document.getElementById('weather_swap_rate');
     var backgroundColorPicker = document.getElementById('background_color');
@@ -154,13 +177,8 @@
     options['weather_refresh_rate'] = parseInt(weather_refresh_rate.value);
     options['weather_swap_rate'] = parseInt(weather_swap_rate.value);
     options['blt_vibrate'] = bltVibrate.checked;
+    options['metric'] = updateWeatherURL();
     //INPUT VALIDATION
-    var valid_zipcode = true;
-    var zipcode_pattern = /^\d{5}$/
-    if(options["weather_refresh_rate"] > 0){
-      options['zipcode']= zipcode.value;
-      valid_zipcode = zipcode_pattern.test(options["zipcode"]);
-    }
     if(options["weather_swap_rate"] == 0 && options["weather_refresh_rate"]==0){
       alert("The weather and swap rates cannot both be set to 0");
     }
@@ -170,17 +188,17 @@
     else if(!(options["weather_swap_rate"]>=0)){
       alert("Please enter a valid swap rate (a # greater than or equal to 0)")
     }
-    else if(!valid_zipcode){
-      alert("Invalid zipcode, please try again")
-    }
     else{
       console.log('Got options: ' + JSON.stringify(options));
       if(save==1){
+        if(options["weather_refresh_rate"] > 0){
+          options['location']= location.value;
+        }
         // Save for next launch
         console.log('Saved these options to web storage');
-        localStorage.clear();
+        window.localStorage.clear();
         for(opt in options){
-          localStorage.setItem(opt, options[opt])
+          window.localStorage.setItem(opt, options[opt])
         }
       }
       return options
@@ -230,7 +248,8 @@
   }
   (function() {
     var bltVibrate = document.getElementById('blt_vibrate');
-    var zipcode = document.getElementById('zipcode');
+    var location = document.getElementById('location');
+    var tempunit = document.getElementById('temp-unit');
     var weather_refresh_rate = document.getElementById('weather_refresh_rate');
     var weather_swap_rate = document.getElementById('weather_swap_rate');
     var backgroundColorPicker = document.getElementById('background_color');
@@ -241,17 +260,21 @@
       'text_color': textColorPicker,
       'accent_color': accentColorPicker,
       'blt_vibrate': bltVibrate,
-      'zipcode': zipcode,
+      'location': location,
       'weather_refresh_rate': weather_refresh_rate,
       'weather_swap_rate': weather_swap_rate,
     };
     for(opt in options){
-      if(localStorage[opt]) {
-        options[opt].value = localStorage.getItem(opt);
-        options[opt].checked = localStorage.getItem(opt) == "true";
-        console.log(opt, localStorage.getItem(opt));
+      if(window.localStorage[opt]) {
+        options[opt].value = window.localStorage.getItem(opt);
+        options[opt].checked = window.localStorage.getItem(opt) == "true";
+        console.log(opt, window.localStorage.getItem(opt));
       }
     }
+    if(window.localStorage.getItem("metric")){
+      document.getElementById("temp-unit").value = parseInt(window.localStorage.getItem("metric")) ? "Celsius" : "Fahrenheit"
+    }
+    updateWeatherURL();
   })();
   </script>
 </html>
