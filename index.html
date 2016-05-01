@@ -189,10 +189,9 @@
       alert("Please enter a valid swap rate (a # greater than or equal to 0)")
     }
     else{
-      console.log('Got options: ' + JSON.stringify(options));
       if(save==1){
         if(options["weather_refresh_rate"] > 0){
-          options['location']= location.value;
+          options['location'] = location.value;
         }
         // Save for next launch
         console.log('Saved these options to web storage');
@@ -203,6 +202,7 @@
       }
       return options
     }
+    console.log('Got options: ' + JSON.stringify(options));
     return false;
   }
 
