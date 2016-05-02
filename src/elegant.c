@@ -48,21 +48,26 @@ char *onesMap[13] = {"", "one", "two", "three", "four", "five", "six", "seven", 
 char *tensMap[6] = {"o'", "teen", "twenty", "thirty", "forty", "fifty"};
 //Config
 bool centered = true;
-int houry = 0;
-int tensy = 30;
-int onesy = 60;
 int batterybary = 102;
-#if defined(PBL_PLATFORM_CHALK)
-  int batterypctx = 112;
-  int datex = 66;
-  int weekdayx = 26;
-#else
-  int batterypctx = 96;
-  int datex = 50;
-  int weekdayx = 10;
-#endif
 int batterypcty = 123;
 int datey = 122;
+#if defined(PBL_PLATFORM_CHALK)
+  int batterypctx = 110;
+  int weatherx = 108;
+  int datex = 66;
+  int weekdayx = 30;
+  int houry = 10;
+  int tensy = 38;
+  int onesy = 65;
+#else
+  int batterypctx = 96;
+  int weatherx = 96;
+  int datex = 50;
+  int weekdayx = 10;
+  int houry = 0;
+  int tensy = 30;
+  int onesy = 60;
+#endif
 //Draw Battery
 static void update_battery(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
@@ -317,13 +322,13 @@ static void main_window_load(Window *window) {
   text_layer_set_text(batt_layer, "XX %");
   //weather conditions
   conditions_layer = text_layer_create(
-    GRect(batterypctx, batterypcty-5, 40, 30)
+    GRect(weatherx, batterypcty-5, 40, 30)
   );
   text_layer_set_background_color(conditions_layer, GColorClear);
   text_layer_set_text_color(conditions_layer, txt_color);
   //temp
   temp_layer = text_layer_create(
-    GRect(batterypctx, batterypcty+15, 40, 20)
+    GRect(weatherx, batterypcty+15, 40, 20)
   );
   text_layer_set_background_color(temp_layer, GColorClear);
   text_layer_set_text_color(temp_layer, txt_color);
