@@ -123,7 +123,7 @@ static void bluetooth_callback(bool connected) {
   if(!connected) {
     vibes_double_pulse();
   }
-  if(last_conn == 0 && connected == 1){
+  if(last_conn == 0 && connected == 1 && weather_refresh_rate != 0){
     request_weather();
   }
   last_conn = connected;
@@ -215,21 +215,26 @@ static void update_time() {
   text_layer_set_text(month_layer, month_buffer);
   text_layer_set_text(date_layer, date_buffer);
 }
-static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
+static void swap_weather(){
   static bool displayMode = 0;
   if(weather_swap_rate==0){
-    displayMode = 1;
-  }
-  else if(weather_refresh_rate ==0){
     displayMode = 0;
   }
-  if(tick_time->tm_sec % weather_swap_rate == 0) {
-    displayMode = 1 - displayMode;
-    layer_set_hidden((Layer *)batt_layer, 1 - displayMode);
-    layer_set_hidden((Layer *)conditions_layer, displayMode);
-    layer_set_hidden((Layer *)temp_layer, displayMode);
+  else if(weather_refresh_rate == 0){
+    displayMode = 1;
   }
-  if(tick_time->tm_sec == 0 && tick_time->tm_min % weather_refresh_rate == 0) {
+  else{
+    displayMode = 1 - displayMode;
+  }
+  layer_set_hidden((Layer *)batt_layer, 1 - displayMode);
+  layer_set_hidden((Layer *)conditions_layer, displayMode);
+  layer_set_hidden((Layer *)temp_layer, displayMode);
+}
+static void tick_handler(struct tm *tick_time, TimeUnits units_changed){
+  if(weather_swap_rate != 0 && tick_time->tm_sec % weather_swap_rate == 0) {
+    swap_weather();
+  }
+  if(weather_refresh_rate != 0 && tick_time->tm_sec == 0 && tick_time->tm_min % weather_refresh_rate == 0) {
     request_weather();
   }
   update_time();
@@ -377,6 +382,7 @@ static void main_window_load(Window *window) {
   layer_add_child(window_get_root_layer(window), graph_layer);
   update_time();
   bluetooth_callback(connection_service_peek_pebble_app_connection());
+  swap_weather();
 }
 static void main_window_unload(Window *window){
   text_layer_destroy(hour_layer);
@@ -485,7 +491,10 @@ static void setupSettings(DictionaryIterator *iter){
   APP_LOG(APP_LOG_LEVEL_DEBUG, "blt_vibrate: %d", blt_vibrate);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "location: %s; weather_refresh_rate: %d; weather_swap_rate: %d", location, weather_refresh_rate, weather_swap_rate);
   setupTheme(iter);
-  request_weather();
+  swap_weather();
+  if(weather_refresh_rate != 0){
+    request_weather();
+  }
 }
 
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
